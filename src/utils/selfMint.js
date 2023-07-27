@@ -1,5 +1,5 @@
 const bio = require('bufio');
-const bcash = require('bcash-components');
+const bcash = require('@hansekontor/checkout-components');
 const MTX = bcash.MTX;
 const consensus = bcash.consensus;
 const { hashType } = bcash.Script;
@@ -7,7 +7,7 @@ const {
     SLP,
     common: { opcodes }
 } = bcash.script;
-const hash256 = require('bcrypto').Hash256;
+const hash256 = bcash.bcrypto.Hash256;
 const { i64, u64 } = require('n64');
 
 export const authPubKeys = [
@@ -24,7 +24,7 @@ export const authPubKeys = [
 ]
 
 export const buildOutScript = (authPubKey, checkIsFirstInput = false) => {
-    const script = new Script()
+    const script = new bcash.Script()
         .pushSym('2dup')
         .pushInt(36)
         .pushSym('split')

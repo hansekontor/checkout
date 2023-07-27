@@ -24,7 +24,7 @@ import {
     Mnemonic,
     HDPrivateKey,
     KeyRing
-} from 'bcash-components';
+} from '@hansekontor/checkout-components';
 
 const useWallet = () => {
     const [wallet, setWallet] = useState(false);

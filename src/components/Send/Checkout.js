@@ -33,9 +33,14 @@ import ApiError from '@components/Common/ApiError';
 import PropsError from '@components/Common/PropsError';
 import { formatFiatBalance } from '@utils/validation';
 import cashaddr from 'ecashaddrjs';
+import { getUrlFromQueryString } from '@utils/bip70';
 import { getPaymentRequest } from '../../utils/bip70';
-import Script from 'bcash-components';
-import SLP from 'bcash-components';
+import { 
+    Output,
+    Script,
+    script
+} from '@hansekontor/checkout-components';
+const { SLP } = script;
 import { U64 } from 'n64';
 import CheckOutIcon from "@assets/checkout_icon.svg";
 import {
@@ -51,17 +56,13 @@ import {
     AgreeModal,
 } from "../../assets/styles/checkout.styles";
 
-function getBip70Url() {
-    const url = "https://bip70.cert.cash";
-    return url;
-}
 
 const Checkout = ({ paymentUrl, 
-                    paymentRequest, 
-                    passLoadingStatus, 
-                    onSuccess, 
-                    onCancel
-                }) => {
+    paymentRequest = {}, 
+    passLoadingStatus, 
+    onSuccess, 
+    onCancel
+}) => {
     // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
     // this handles edge case of user with old wallet who has not opened latest Cashtab version yet
 
@@ -80,6 +81,7 @@ const Checkout = ({ paymentUrl,
         );
     }
     console.log("isPaymentUrl", isPaymentUrl, "isPaymentRequest", isPaymentRequest, "isPropsError", propsError);
+   
     const ContextValue = React.useContext(WalletContext);
     const location = useLocation();
     const { 
@@ -97,7 +99,8 @@ const Checkout = ({ paymentUrl,
     // Modal settings
     const purchaseTokenIds = [
         '7e7dacd72dcdb14e00a03dd3aff47f019ed51a6f1f4e4f532ae50692f62bc4e5',
-        '744354f928fa48de87182c4024e2c4acbd3c34f42ce9d679f541213688e584b1'
+        '744354f928fa48de87182c4024e2c4acbd3c34f42ce9d679f541213688e584b1',
+        '4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a'
     ];
 
     const blankFormData = {
@@ -105,6 +108,7 @@ const Checkout = ({ paymentUrl,
         value: '',
         address: '',
     };
+
     const [formData, setFormData] = useState(blankFormData);
     let tokenFormattedBalance;
     if (formData.token) {
@@ -170,14 +174,17 @@ const Checkout = ({ paymentUrl,
         getBcashRestUrl, 
         sendBip70,
         sendSelfMint,
-        getPostage 
+        sendSelfMintV2,
+        generateBurnTx,
+        getMintVaultAddress,
+        getPostage,
+        readAuthCode
     } = useBCH();
 
     // If the balance has changed, unlock the UI
     // This is redundant, if backend has refreshed in 1.75s timeout below, UI will already be unlocked
     useEffect(() => {
         passLoadingStatus(false);
-        console.log("useEffect passLoadingStatus false");
     }, [balances.totalBalance]);
 
     useEffect(() => {
@@ -193,16 +200,59 @@ const Checkout = ({ paymentUrl,
                     purchaseAmount = rounded < 1 ? 1 : rounded;
                 }
                 setPurchaseTokenAmount(purchaseAmount);
-                console.log("useEffect setPurchaseTokenAmount", purchaseAmount);
             }
         }
     }, [tokenFormattedBalance]);
 
     useEffect(async () => {
         // if (!wallet.Path1899)
-            // return history.push('/wallet');
+        //     return history.push('/wallet');
         passLoadingStatus(true);
+        // Manually parse for prInfo object on page load when SendBip70.js is loaded with a query string
 
+        // // Do not set prInfo in state if query strings are not present
+        // if (
+        //     !window.location ||
+        //     !window.location.hash ||
+        //     (window.location.search == '' && window.location.hash === '#/sendBip70')
+        // ) {
+        //     passLoadingStatus(false);
+        //     return;
+        // }
+
+        // const fullQueryString = window.location.search == '' ? 
+        //     window.location.hash : window.location.search;
+
+        // const delimiterIndex = fullQueryString.indexOf('?');
+        // const txInfoArr = fullQueryString
+        //     .slice(delimiterIndex+1)
+        //     .split('&');
+
+        // Iterate over this to create object
+        // const prInfo = {};
+        // for (let i = 0; i < txInfoArr.length; i += 1) {
+        //     const delimiterIndex = txInfoArr[i].indexOf('=');
+        //     const param = txInfoArr[i]
+        //         .slice(0, delimiterIndex)
+        //         .toLowerCase();
+        //     // Forward to selfMint if auth code is specified
+        //     if (param == 'mintauth') {
+        //         console.log('has mintauth')
+        //         return history.push('/selfMint');
+        //     }
+
+        //     const encodedValue = txInfoArr[i].slice(delimiterIndex+1);
+        //     const value = decodeURIComponent(encodedValue);
+        //     const prefix = value.split(':')[0];
+        //     if (param === 'uri' && prefixesArray.includes(prefix)) {
+        //         const queryString = value.split('?')[1];
+        //         const url = getUrlFromQueryString(queryString);
+        //         if (url) {
+        //             prInfo.type = prefix.toLowerCase();
+        //             prInfo.url = url;
+        //         }
+        //     }
+        // }
         const prInfo = {};
         if(isPaymentRequest) {            
             const allowedParameters = [ 
@@ -224,12 +274,12 @@ const Checkout = ({ paymentUrl,
                 obj[key] = paymentRequest[key];
                 return obj;
             }, {});
-            if (paymentRequest.customer_id) // api currently only takes certificates
-                prQuery.cert_hash = prQuery.customer_id;
+            // if (paymentRequest.customer_id) // api currently only takes certificates
+            //     prQuery.cert_hash = prQuery.customer_id;
             prQuery.return_json = true;    
             console.log("prQuery", prQuery);
             const data = await fetch(
-                "https://relay2.cmpct.org/v2?" + new URLSearchParams(prQuery))
+                "https://dev-api.bux.digital/v2/pay?" + new URLSearchParams(prQuery))
                 .then(res => res.json());
             console.log("fetch data", data);
             prInfo.url = data.paymentUrl;
@@ -238,7 +288,6 @@ const Checkout = ({ paymentUrl,
             prInfo.url = paymentUrl;
             prInfo.type ="etoken"; // parametrize?
         }
-
         console.log(`prInfo from page params`, prInfo);
         if (prInfo.url && prInfo.type) {
             try {
@@ -255,12 +304,12 @@ const Checkout = ({ paymentUrl,
                 await sleep(3000);
                 // Manually disable loading
                 passLoadingStatus(false);
-                // window.history.replaceState(null, '', window.location.origin);
-                // return history.push(`/wallet`);
+                window.history.replaceState(null, '', window.location.origin);
+                return history.push(`/wallet`);
             }
         } else {
             passLoadingStatus(false);
-            // return history.push('/wallet');
+            return history.push('/wallet');
         }
         setPrInfoFromUrl(prInfo);
         prInfo.paymentDetails.type = prInfo.type;
@@ -418,7 +467,8 @@ const Checkout = ({ paymentUrl,
             }
 
             setTokensSent(true)
-            onSuccess(link);
+            onSuccess(link)
+
             // If doing a chain, force full wallet update
             // UTXOs may not change (ie. in a mint chain)
             if (rawChainTxs)
@@ -428,8 +478,8 @@ const Checkout = ({ paymentUrl,
             // Manually disable loading
             passLoadingStatus(false);
             // Return to main wallet screen
-            // window.history.replaceState(null, '', window.location.origin);
-            // return history.push(`/wallet`);
+            window.history.replaceState(null, '', window.location.origin);
+            return history.push(`/wallet`);
         } catch (e) {
             console.error(e)
             // Retry send if response is 402 or 404 (mitigates stamp/baton race conditions)
@@ -445,7 +495,6 @@ const Checkout = ({ paymentUrl,
                 const ticker = type == 'etoken' ?
                     currency.tokenTicker : currency.ticker;
                 handleSendXecError(e, ticker);
-                onCancel(true);
             }
         }
         
@@ -455,7 +504,7 @@ const Checkout = ({ paymentUrl,
         passLoadingStatus(false);
     }
 
-    const doSelfMint = async (authCodeB64, attempt = 1) => {
+    const doSelfMint = async (authCodeB64, attempt = 1, rawBurnTx) => {
         setFormData({
             ...formData,
             dirty: false,
@@ -483,20 +532,37 @@ const Checkout = ({ paymentUrl,
         const doChainedMint = true;
 
         try {
+            const { 
+                version
+            } = readAuthCode(authCodeB64);
             // Send transaction
-            const rawMintTx = await sendSelfMint(
-                wallet,
-                tokenId,
-                authCodeB64,
-                false, // testOnly
-                doChainedMint
-            );
+            let rawMintTx;
+            if (version === 1) {
+                rawMintTx = await sendSelfMint(
+                    wallet,
+                    tokenId,
+                    authCodeB64,
+                    false, // testOnly
+                    doChainedMint
+                );
+            } else {
+                rawMintTx = await sendSelfMintV2(
+                    wallet,
+                    authCodeB64,
+                    false, // testOnly
+                    doChainedMint,
+                    rawBurnTx
+                );
+            }
 
             setTokensMinted(true);
 
             if (doChainedMint)
                 return send(
-                    [rawMintTx],
+                    [
+                        ...rawBurnTx ? [rawBurnTx] : [], 
+                        rawMintTx
+                    ],
                     authCodeB64,
                     attempt
                 )
@@ -561,7 +627,11 @@ const Checkout = ({ paymentUrl,
     const feeAmount = (.50 + (purchaseTokenAmount * .06)).toFixed(2); // Add 50 cent fixed fee to 6% percentage
     const totalAmount = (Number(purchaseTokenAmount) + Number(feeAmount)).toFixed(2);
 
-    const isSandbox = formData.token?.tokenId === '744354f928fa48de87182c4024e2c4acbd3c34f42ce9d679f541213688e584b1'
+    const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
+    const tokenTypeVersion = purchaseTokenIds.slice(2).includes(formData.token?.tokenId) ? 2 : 1;
+
+    const referenceId = tokenTypeVersion === 1 ? `${wallet.Path1899.slpAddress}-${purchaseTokenAmount}`
+        : `b70-${wallet.Path1899.slpAddress}-${prInfoFromUrl.url}`
 
     const PayPalSection = () => {
         return (
@@ -580,7 +650,7 @@ const Checkout = ({ paymentUrl,
                                 .create({
                                     purchase_units: [
                                         {
-                                            reference_id: `${wallet.Path1899.slpAddress}-${purchaseTokenAmount}`,
+                                            reference_id: referenceId,
                                             description: `Self-Mint Auth Code (${purchaseTokenAmount} BUX Tokens)`,
                             
                                             custom_id: location.href,
@@ -618,22 +688,37 @@ const Checkout = ({ paymentUrl,
                                 });
                         }}
                         onApprove={(data, actions) => {
-                            return actions.order.capture().then(function (details) {
+                            return actions.order.capture().then(async (details) => {
                                 // Your code here after capture the order
-                                passLoadingStatus(true);
+                                passLoadingStatus('true');
+                                // Handle token/fiat split payment
+                                let burnTx;
+                                if (Number(tokenFormattedBalance) >= .01) {
+                                    passLoadingStatus('Adding existing wallet balance to payment...');
+                                    const mintVaultBatonOutput = new Output({
+                                        address: getMintVaultAddress(),
+                                        value: 5700
+                                    })
+                                    burnTx = await generateBurnTx(
+                                        wallet,
+                                        formData.token.tokenId,
+                                        [],
+                                        mintVaultBatonOutput
+                                    );
+                                }
+                                // console.log('burnTx', burnTx && burnTx.toString('hex'))
+                                passLoadingStatus('Fetching authorization code...');
                                 // Call your server to save the transaction
-                                fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v1/success?paymentId=${details.id}`, {
+                                const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${details.id}`, {
                                     method: 'get',
                                     headers: {
-                                        'content-type': 'application/json'
+                                        'content-type': 'application/json',
+                                        ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
                                     }
-                                })
-                                .then(response => {
-                                    return response.json();
-                                })
-                                .then(data => {
-                                    doSelfMint(data.authcode);
                                 });
+
+                                const data = await response.json();
+                                doSelfMint(data.authcode, 1, burnTx);
                             });
                         }}
                         onError={(err) => {
@@ -772,7 +857,6 @@ const Checkout = ({ paymentUrl,
                         <HorizontalSpacer />                    
                     </>
                 )}
-
 			</CheckoutStyles>
 
                 <Form>            
@@ -781,15 +865,7 @@ const Checkout = ({ paymentUrl,
                         { hasAgreed && (
                             <>
                             {!tokensMinted ? 
-                                <>                
-                                    {prInfoFromUrl.url && (
-                                        <>
-                                            <p className="text-muted">
-                                                Use existing Tokens? 
-                                                <a target="_blank" rel="noopener noreferrer" href={prInfoFromUrl.url}> Open in Wallet</a>
-                                            </p>
-                                        </>
-                                    )}
+                                <>
                                     <p className="text-muted">
                                         By making this purchase you agree to the
                                         <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a>
@@ -809,7 +885,6 @@ const Checkout = ({ paymentUrl,
                 )}
 
                 {apiError && <ApiError />}
-                {propsError && <PropsError/>}
             </Form>
 
             { !hasAgreed && isStage1 &&

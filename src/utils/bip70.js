@@ -2,7 +2,7 @@ import {
     PaymentRequest,
     Payment,
     PaymentACK
-} from "b70";
+} from "b70-checkout";
 
 export const validatePrUrl = (urlString) => {
      // Check for BIP70
