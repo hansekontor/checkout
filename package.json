@@ -1,6 +1,6 @@
 {
-    "name": "cashtab",
-    "version": "1.4.1",
+    "name": "cashtab-checkout",
+    "version": "0.0.1",
     "private": true,
     "homepage": "https://wallet.badger.cash/",
     "license": "MIT license",
@@ -45,7 +45,6 @@
     "scripts": {
         "start": "node scripts/start.js",
         "build": "node scripts/build.js",
-        "extension": "./scripts/extension.sh",
         "predeploy": "npm run build",
         "posttest": "./scripts/addGenerated.sh",
         "test": "node scripts/test.js",
@@ -160,7 +159,6 @@
         "eslint-plugin-react": "^7.22.0",
         "eslint-plugin-react-hooks": "^4.2.0",
         "eslint-webpack-plugin": "^2.5.4",
-        "extensionizer": "^1.0.1",
         "file-loader": "^6.2.0",
         "fs-extra": "^7.0.1",
         "html-webpack-plugin": "^4.5.1",

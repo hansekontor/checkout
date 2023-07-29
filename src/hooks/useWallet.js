@@ -490,46 +490,6 @@ const useWallet = () => {
         return walletToActivate;
     };
 
-    const renameWallet = async (oldName, newName) => {
-        // Load savedWallets
-        let savedWallets;
-        try {
-            savedWallets = await localforage.getItem('savedWallets');
-        } catch (err) {
-            console.log(
-                `Error in await localforage.getItem("savedWallets") in renameWallet`,
-            );
-            console.log(err);
-            return false;
-        }
-        // Verify that no existing wallet has this name
-        for (let i = 0; i < savedWallets.length; i += 1) {
-            if (savedWallets[i].name === newName) {
-                // return an error
-                return false;
-            }
-        }
-
-        // change name of desired wallet
-        for (let i = 0; i < savedWallets.length; i += 1) {
-            if (savedWallets[i].name === oldName) {
-                // Replace the name of this entry with the new name
-                savedWallets[i].name = newName;
-            }
-        }
-        // resave savedWallets
-        try {
-            // Set walletName as the active wallet
-            await localforage.setItem('savedWallets', savedWallets);
-        } catch (err) {
-            console.log(
-                `Error in localforage.setItem("savedWallets", savedWallets) in renameWallet()`,
-            );
-            return false;
-        }
-        return true;
-    };
-
     const deleteWallet = async walletToBeDeleted => {
         // delete a wallet
         // returns true if wallet is successfully deleted
@@ -993,7 +953,6 @@ const useWallet = () => {
             }
         },
         addNewSavedWallet,
-        renameWallet,
         deleteWallet,
     };
 };

@@ -31,67 +31,18 @@ export const WelcomeLink = styled.a`
 
 const OnBoarding = () => {
     const ContextValue = React.useContext(WalletContext);
-    const { createWallet, validateMnemonic } = ContextValue;
-    const [formData, setFormData] = useState({
-        dirty: true,
-        mnemonic: '',
-    });
-
-    const [seedInput, openSeedInput] = useState(false);
-    const [isValidMnemonic, setIsValidMnemonic] = useState(false);
-    const { confirm } = Modal;
+    const { createWallet } = ContextValue;
 
     useEffect(() => {
         Event('Onboarding.js', 'Create Wallet', 'New');
         createWallet();
     }, []);
 
-    async function submit() {
-        setFormData({
-            ...formData,
-            dirty: false,
-        });
-
-        if (!formData.mnemonic) {
-            return;
-        }
-        // Event("Category", "Action", "Label")
-        // Track number of created wallets from onboarding
-        Event('Onboarding.js', 'Create Wallet', 'Imported');
-        createWallet(formData.mnemonic);
-    }
-
-    const handleChange = e => {
-        const { value, name } = e.target;
-
-        // Validate mnemonic on change
-        // Import button should be disabled unless mnemonic is valid
-        setIsValidMnemonic(validateMnemonic(value));
-
-        setFormData(p => ({ ...p, [name]: value }));
-    };
-
-    function showBackupConfirmModal() {
-        confirm({
-            title: "Don't forget to back up your wallet",
-            icon: <ExclamationCircleOutlined />,
-            content: `Once your wallet is created you can back it up by writing down your 12-word seed. You can find your seed on the Settings page. If you are browsing in Incognito mode or if you clear your browser history, you will lose any funds that are not backed up!`,
-            okText: 'Okay, make me a wallet!',
-            onOk() {
-                // Event("Category", "Action", "Label")
-                // Track number of created wallets from onboarding
-                Event('Onboarding.js', 'Create Wallet', 'New');
-                createWallet();
-            },
-        });
-    }
-
     return (
         <>
             <WelcomeText>
                 Creating new wallet. Please wait.
             </WelcomeText>
-            <Spin></Spin>
         </>
     );
 };
