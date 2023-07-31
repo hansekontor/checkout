@@ -274,12 +274,12 @@ const Checkout = ({ paymentUrl,
                 obj[key] = paymentRequest[key];
                 return obj;
             }, {});
-            // if (paymentRequest.customer_id) // api currently only takes certificates
-            //     prQuery.cert_hash = prQuery.customer_id;
+            if (paymentRequest.customer_id) // api currently only takes certificates
+                prQuery.cert_hash = prQuery.customer_id;
             prQuery.return_json = true;    
             console.log("prQuery", prQuery);
             const data = await fetch(
-                "https://dev-api.bux.digital/v2/pay?" + new URLSearchParams(prQuery))
+                "https://relay2.cmpct.org/template?" + new URLSearchParams(prQuery))
                 .then(res => res.json());
             console.log("fetch data", data);
             prInfo.url = data.paymentUrl;
@@ -304,12 +304,11 @@ const Checkout = ({ paymentUrl,
                 await sleep(3000);
                 // Manually disable loading
                 passLoadingStatus(false);
-                window.history.replaceState(null, '', window.location.origin);
-                return history.push(`/wallet`);
+                window.close();
             }
         } else {
             passLoadingStatus(false);
-            return history.push('/wallet');
+            window.close();
         }
         setPrInfoFromUrl(prInfo);
         prInfo.paymentDetails.type = prInfo.type;
@@ -468,18 +467,11 @@ const Checkout = ({ paymentUrl,
 
             setTokensSent(true)
             onSuccess(link)
+            await sleep(1000);
 
-            // If doing a chain, force full wallet update
-            // UTXOs may not change (ie. in a mint chain)
-            if (rawChainTxs)
-                await forceWalletUpdate(true);
-            else
-                await sleep(3000);
-            // Manually disable loading
             passLoadingStatus(false);
-            // Return to main wallet screen
-            window.history.replaceState(null, '', window.location.origin);
-            return history.push(`/wallet`);
+            // Return to merchant site
+            window.close();
         } catch (e) {
             console.error(e)
             // Retry send if response is 402 or 404 (mitigates stamp/baton race conditions)

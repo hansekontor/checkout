@@ -5,8 +5,9 @@ let CheckoutZoidComponent = zoid.create({
     url: 'http://localhost:3000/#/checkout',
     dimensions: {
         width: "500px",
-        height: "1000px",
+        height: "750px",
     },
+    defaultContext: "popup"
 });
 
 export default CheckoutZoidComponent;

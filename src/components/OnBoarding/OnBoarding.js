@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { WalletContext } from '@utils/context';
-import { Input, Form, Modal, Spin } from 'antd';
-import { AntdFormWrapper } from '@components/Common/EnhancedInputs';
-import {
-    ExclamationCircleOutlined,
-    PlusSquareOutlined,
-    ImportOutlined,
-    LockOutlined,
-} from '@ant-design/icons';
-import PrimaryButton, {
-    SecondaryButton,
-    SmartButton,
-} from '@components/Common/PrimaryButton';
-import { currency } from '@components/Common/Ticker.js';
 import { Event } from '@utils/GoogleAnalytics';
 
 export const WelcomeText = styled.p`
