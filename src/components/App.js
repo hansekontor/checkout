@@ -5,7 +5,6 @@ import { CashLoadingIcon, LoadingBlock } from '@components/Common/CustomIcons';
 import '../index.css';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { theme } from '@assets/styles/theme';
-// import Checkout from '@components/Send/Checkout';
 const Checkout = lazy(() => import('./Send/Checkout'));
 const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
@@ -20,11 +19,7 @@ import {
     useLocation,
     useHistory,
 } from 'react-router-dom';
-// Easter egg imports not used in extension/src/components/App.js
-import TabCash from '@assets/tabcash.png';
 import ABC from '@assets/logo_topright.png';
-// Biometric security import not used in extension/src/components/App.js
-// import ProtectableComponentWrapper from './Authentication/ProtectableComponentWrapper';
 import OnBoarding from '@components/OnBoarding/OnBoarding';
 
 
@@ -87,55 +82,6 @@ const CustomApp = styled.div`
     background-color: ${props => props.theme.app.background};
 `;
 
-const Footer = styled.div`
-    z-index: 2999;
-    background-color: ${props => props.theme.footer.background};
-    border-radius: 20px 20px 0 0;
-    position: fixed;
-    bottom: 0;
-    width: 500px;
-    box-shadow: 0px -34px 20px rgba(0, 0, 0, 0.02), 0px -15px 15px rgba(0, 0, 0, 0.03), 0px -4px 8px rgba(0, 0, 0, 0.03), 0px 0px 0px rgba(0, 0, 0, 0.03);
-    @media (max-width: 768px) {
-        width: 100%;
-    }
-`;
-
-export const NavButton = styled.button`
-    :focus,
-    :active {
-        outline: none;
-    }
-    cursor: pointer;
-    padding: 24px 12px 12px 12px;
-    margin: 0 28px;
-    @media (max-width: 475px) {
-        margin: 0 20px;
-    }
-    @media (max-width: 420px) {
-        margin: 0 12px;
-    }
-    @media (max-width: 350px) {
-        margin: 0 8px;
-    }
-    background-color: ${props => props.theme.footer.background};
-    border: none;
-    font-size: 10.5px;
-    font-weight: bold;
-    .anticon {
-        display: block;
-        color: ${props => props.theme.footer.navIconInactive};
-        font-size: 24px;
-        margin-bottom: 6px;
-    }
-    ${({ active, ...props }) =>
-        active &&
-        `    
-        color: ${props.theme.primary};
-        .anticon {
-            color: ${props.theme.primary};
-        }
-  `}
-`;
 
 export const WalletBody = styled.div`
     display: flex;
@@ -204,25 +150,20 @@ const App = () => {
     // If wallet is unmigrated, do not show page until it has migrated
     // An invalid wallet will be validated/populated after the next API call, ETA 10s
     const validWallet = isValidStoredWallet(wallet);
-    const location = useLocation();
+    // const location = useLocation();
     const history = useHistory();
 
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
 
-    const navRedirect = (key) => {
-            window.history.replaceState(null, '', window.location.origin);
-            history.push(`/${key}`)
-    }
 
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
             <Spin
                 spinning={
-                    loading || loadingUtxosAfterSend || (wallet && !validWallet)
+                    loading || (wallet && !validWallet)
                 }
                 indicator={CashLoadingIcon}
-                tip={typeof loadingUtxosAfterSend === "string" ? loadingUtxosAfterSend : ""}
             >
                 <CustomApp>
                     <WalletBody>
@@ -239,7 +180,6 @@ const App = () => {
                                 <CashTabLogo src={CashTab} alt="cashtab" />
                                 {/*Begin component not included in extension as replaced by open in tab link*/}
                             </HeaderCtn>
-                            {/* <ProtectableComponentWrapper> */}
                             <WalletLabel name={wallet.name}></WalletLabel>
                                 <Suspense fallback={codeSplitLoader}>
                                     <Switch>
@@ -253,11 +193,9 @@ const App = () => {
                                                 <OnBoarding />
                                             )}
                                         </Route>
-                                        <Redirect exact from="/" to="/wallet" />
                                         <Route component={NotFound} />
                                     </Switch>
                                 </Suspense>
-                            {/* </ProtectableComponentWrapper> */}
                         </WalletCtn>
                     </WalletBody>
                 </CustomApp>
