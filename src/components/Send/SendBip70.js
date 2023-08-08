@@ -59,7 +59,13 @@ import {
 } from "../../assets/styles/checkout.styles";
 
 
-const SendBip70 = ({ forwardToCheckout }) => {
+const SendBip70 = ({                                     
+    prInfoFromUrl,
+    onSuccess, 
+    onCancel, 
+    forwardToCheckout, 
+    passLoadingStatus
+ }) => {
     // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
     // this handles edge case of user with old wallet who has not opened latest Cashtab version yet
 
@@ -105,7 +111,7 @@ const SendBip70 = ({ forwardToCheckout }) => {
     const [selectedCurrency, setSelectedCurrency] = useState(currency.ticker);
 
     // Support cashtab button from web pages
-    const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
+    // const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
 
     // Show a confirmation modal on transactions created by populating form from web page button
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -256,7 +262,7 @@ const SendBip70 = ({ forwardToCheckout }) => {
                 } else {
                     throw new Error(
                         `Unsupported SLP transaction type: ${slpScript.getType()}`
-                    );
+                    );                    
                 }
                 // Compute total amount to send
                 const totalBase = sendRecords.reduce((total, record) => {
@@ -308,7 +314,8 @@ const SendBip70 = ({ forwardToCheckout }) => {
         }
 
         errorNotification(errorObj, message, `Sending ${ticker}`);
-
+        onCancel();
+        window.close()
     }
 
     async function send() {
@@ -353,12 +360,12 @@ const SendBip70 = ({ forwardToCheckout }) => {
             }
             
             // Sleep for 3 seconds and then 
+            onSuccess(link);
             await sleep(3000);
             // Manually disable loading
             passLoadingStatus(false);
             // Return to main wallet screen
-            window.history.replaceState(null, '', window.location.origin);
-            return history.push(`/wallet`);
+            window.close();
         } catch (e) {
             const ticker = type == 'etoken' ?
                 currency.tokenTicker : currency.ticker;
@@ -611,6 +618,12 @@ SendBip70.defaultProps = {
     passLoadingStatus: status => {
         console.log(status);
     },
+    onSuccess: link => {
+        console.log("onSuccess", link);
+    },
+    onCancel: status => {
+        console.log("onCancel:", status);
+    }
 };
 
 SendBip70.propTypes = {

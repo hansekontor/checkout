@@ -5,6 +5,7 @@ import { CashLoadingIcon, LoadingBlock } from '@components/Common/CustomIcons';
 import '../index.css';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { theme } from '@assets/styles/theme';
+const Wallet = lazy(() => import('./Wallet/Wallet'));
 const Checkout = lazy(() => import('./Send/Checkout'));
 const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
@@ -20,7 +21,6 @@ import {
     useHistory,
 } from 'react-router-dom';
 import ABC from '@assets/logo_topright.png';
-import OnBoarding from '@components/OnBoarding/OnBoarding';
 
 
 const GlobalStyle = createGlobalStyle`    
@@ -154,7 +154,6 @@ const App = () => {
     const history = useHistory();
 
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
-    const []
 
 
     return (
@@ -191,13 +190,13 @@ const App = () => {
                                                 />
                                             }
                                         </Route>
-                                        <Route path="/checkout">
+                                        {/* <Route path="/checkout">
                                             <Checkout
                                                 paymentRequest={paymentRequest}
                                                 onSuccess={onSuccess}
                                                 onCancel={onCancel}
                                             />
-                                        </Route>
+                                        </Route> */}
                                         <Route component={NotFound} />
                                     </Switch>
                                 </Suspense>

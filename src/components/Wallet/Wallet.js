@@ -1,27 +1,20 @@
 import React, { useEffect, useState }  from 'react';
 import { useHistory } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { WalletContext } from '@utils/context';
-import OnBoarding from '@components/OnBoarding/OnBoarding';
-import { QRCode } from '@components/Common/QRCode';
 import { currency } from '@components/Common/Ticker.js';
-import { Link } from 'react-router-dom';
-import TokenList from './TokenList';
-import TxHistory from './TxHistory';
-import ApiError from '@components/Common/ApiError';
-import BalanceHeader from '@components/Common/BalanceHeader';
-import BalanceHeaderFiat from '@components/Common/BalanceHeaderFiat';
-import { LoadingCtn, ZeroBalanceHeader } from '@components/Common/Atoms';
 import { getWalletState } from '@utils/cashMethods';
 import { getUrlFromQueryString } from '@utils/bip70';
 import { getPaymentRequest } from '../../utils/bip70';
-
+import Checkout from '@components/Send/Checkout';
+import SendBip70 from '@components/Send/SendBip70';
+import TokenDecision from '@components/OnBoarding/TokenDecision';
 
 
 const Wallet = ({    
     paymentUrl, 
     paymentRequest = {}, 
-    passLoadingStatus, 
     onSuccess, 
     onCancel
 }) => {
@@ -45,9 +38,9 @@ const Wallet = ({
 
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
     const hasPaymentRequest = 'customer_id' in paymentRequest // url trumps new request
-                    && 'amount' in paymentRequest && !isPaymentUrl;
+                    && 'amount' in paymentRequest && !hasPaymentUrl;
 
-    useEffect(() => {
+    useEffect(async() => {
         const prInfo = {};
         if (
             !window.location ||
@@ -88,12 +81,12 @@ const Wallet = ({
                 console.log("fetch data", data);
                 prInfo.url = data.paymentUrl;
                 prInfo.type = data.currency;
+                // catch error
             } else {
                 prInfo.url = paymentUrl;
                 prInfo.type ="etoken";
             }
             console.log("prInfo from props", prInfo);
-            return;
         } else {
 
             const fullQueryString = window.location.search == '' ? 
@@ -154,26 +147,30 @@ const Wallet = ({
 
 
     return (
-        <>
-            {isFinalBalance ? (
+        <>  
+            {prInfoFromUrl && (
                 <>
-                    {routeToCheckout ? (
-                        <Checkout
-                            prInfoFromUrl={prInfoFromUrl} 
-                            onSuccess={onSuccess}
-                            onCancel={onCancel}
-                        />
-                    ) : (                
-                        <SendBip70 
-                            prInfoFromUrl={prInfoFromUrl} 
-                            onSuccess={onSuccess}
-                            onCancel={onCancel}
-                            routeToCheckout={setRouteToCheckout}
-                        />
-                    )}
-                </>
-            ) : (
-                <TokenDecision prInfoFromUrl={prInfoFromUrl} passDecisionStatus={setFinalBalance} />
+                    {isFinalBalance ? (
+                        <>
+                            {routeToCheckout ? (
+                                <Checkout
+                                    prInfoFromUrl={prInfoFromUrl} 
+                                    onSuccess={onSuccess}
+                                    onCancel={onCancel}
+                                />
+                            ) : (                
+                                <SendBip70 
+                                    prInfoFromUrl={prInfoFromUrl} 
+                                    onSuccess={onSuccess}
+                                    onCancel={onCancel}
+                                    forwardToCheckout={setRouteToCheckout}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        <TokenDecision prInfoFromUrl={prInfoFromUrl} passDecisionStatus={setFinalBalance} />
+                    )}  
+                </>          
             )}
         </>
     )

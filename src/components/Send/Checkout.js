@@ -58,7 +58,8 @@ import {
 const Checkout = ({ 
     prInfoFromUrl,
     onSuccess, 
-    onCancel
+    onCancel,
+    passLoadingStatus
 }) => {
     // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
     // this handles edge case of user with old wallet who has not opened latest Cashtab version yet
@@ -190,7 +191,7 @@ const Checkout = ({
     }, [tokenFormattedBalance]);
 
     useEffect(async () => {
-        await populateFormsFromPaymentDetails(prInfo.paymentDetails);
+        await populateFormsFromPaymentDetails(prInfoFromUrl.paymentDetails);
     }, []);
 
     async function populateFormsFromPaymentDetails(paymentDetails) {
@@ -295,6 +296,8 @@ const Checkout = ({
         }
 
         errorNotification(errorObj, message, `Sending ${ticker}`);
+        onCancel();
+        window.close()
 
     }
 
