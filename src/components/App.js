@@ -154,6 +154,7 @@ const App = () => {
     const history = useHistory();
 
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
+    const []
 
 
     return (
@@ -183,15 +184,19 @@ const App = () => {
                             <WalletLabel name={wallet.name}></WalletLabel>
                                 <Suspense fallback={codeSplitLoader}>
                                     <Switch>
-                                        <Route path="/checkout">
-                                            {(wallet && wallet.Path1899) ||
-                                            (previousWallet && previousWallet.path1899) ? (
-                                                <Checkout
+                                        <Route path="/">
+                                            {(wallet && wallet.Path1899) &&
+                                                <Wallet 
                                                     {...window.xprops}
                                                 />
-                                            ) : (
-                                                <OnBoarding />
-                                            )}
+                                            }
+                                        </Route>
+                                        <Route path="/checkout">
+                                            <Checkout
+                                                paymentRequest={paymentRequest}
+                                                onSuccess={onSuccess}
+                                                onCancel={onCancel}
+                                            />
                                         </Route>
                                         <Route component={NotFound} />
                                     </Switch>
