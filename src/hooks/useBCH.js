@@ -37,7 +37,6 @@ import {
 const { Hash160 } = bcrypto;
 import { read } from 'bufio';
 import { PaymentDetails } from 'b70-checkout';
-import { writeMempoolMint } from '@utils/mintHistory';
 
 const { 
     SLP,
@@ -407,14 +406,6 @@ export default function useBCH() {
         };
     };
 
-    const getMintHistory = async (minterPublicKey) => {
-        const mintHistory = await fetch(
-            `https://stats.bux.digital/api/mintsbypubkey/${minterPublicKey}`
-        ).then(res => res.json());
-
-        return mintHistory;
-    };
-
     const broadcastTx = async (hex) => {
         return fetch(`${getBcashRestUrl()}/broadcast`, {
             method: 'POST',
@@ -516,17 +507,6 @@ export default function useBCH() {
                 .pushData(U64.fromString(burnQuantity).toBE(Buffer));
 
         return burnOpReturn.compile();
-    };
-
-    const signPkMessage = async (pk, message) => {
-        try {
-            const keyring = KeyRing.fromSecret(pk);
-            const sig = utils.message.sign(message, keyring);
-            return sig.toString('base64');
-        } catch (err) {
-            console.log(`useBCH.signPkMessage() error: `, err);
-            throw err;
-        }
     };
 
     const sendBip70 = async (
@@ -1256,11 +1236,9 @@ export default function useBCH() {
         getSlpBalancesAndUtxosBcash,
         getTxBcash,
         getTxHistoryBcash,
-        getMintHistory,
         parseTxData,
         parseTokenInfoForTxHistory,
         getBcashRestUrl,
-        signPkMessage,
         sendBip70,
         readAuthCode,
         readAuthCodeV2,
