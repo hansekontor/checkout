@@ -9,7 +9,6 @@ import {
     fromSmallestDenomination,
     loadStoredWallet,
     isValidStoredWallet,
-    // isLegacyMigrationRequired,
 } from '@utils/cashMethods';
 import { isValidCashtabSettings } from '@utils/validation';
 import localforage from 'localforage';
@@ -48,7 +47,7 @@ const useWallet = () => {
           };
     const previousBalances = usePrevious(balances);
     const previousTokens = usePrevious(tokens);
-
+    console.log("useWallet previous Balances", previousBalances, "previousTokens", previousTokens);
     const normalizeBalance = slpBalancesAndUtxos => {
         const totalBalanceInSatoshis = slpBalancesAndUtxos.nonSlpUtxos.reduce(
             (previousBalance, utxo) => previousBalance + utxo.value,
@@ -186,19 +185,6 @@ const useWallet = () => {
         return wallet;
     };
 
-    /*
-    const getSavedWalletsFromLocalForage = async () => {
-        let savedWallets;
-        try {
-            savedWallets = await localforage.getItem('savedWallets');
-        } catch (err) {
-            console.log(`Error in getSavedWalletsFromLocalForage`, err);
-            savedWallets = null;
-        }
-        return savedWallets;
-    };
-    */
-
     const getWallet = async () => {
         let wallet;
         let existingWallet;
@@ -208,19 +194,6 @@ const useWallet = () => {
             // 1 - the 'wallet' value from localForage, if it exists
             // 2 - false if it does not exist in localForage
             // 3 - null if error
-
-            // If the wallet does not have Path1899, add it
-            // or each Path1899, Path145, Path245 does not have a public key, add them
-            // if (existingWallet) {
-            //     if (isLegacyMigrationRequired(existingWallet)) {
-            //         console.log(
-            //             `Wallet does not have Path1899 or does not have public key`,
-            //         );
-            //         existingWallet = await migrateLegacyWallet(
-            //             existingWallet,
-            //         );
-            //     }
-            // }
 
             // If not in localforage then existingWallet = false, check localstorage
             if (!existingWallet) {
@@ -254,40 +227,6 @@ const useWallet = () => {
         }
         return wallet;
     };
-
-    // const migrateLegacyWallet = async (wallet) => {
-    //     const NETWORK = process.env.REACT_APP_NETWORK;
-    //     const mnemonic = wallet.mnemonic;
-    //     const masterHDNode = HDPrivateKey.fromPhrase(mnemonic);
-
-    //     const Path245 = await deriveAccount({
-    //         masterHDNode,
-    //         path: "m/44'/245'/0'/0/0",
-    //     });
-    //     const Path145 = await deriveAccount({
-    //         masterHDNode,
-    //         path: "m/44'/145'/0'/0/0",
-    //     });
-    //     const Path1899 = await deriveAccount({
-    //         masterHDNode,
-    //         path: "m/44'/1899'/0'/0/0",
-    //     });
-
-    //     wallet.Path245 = Path245;
-    //     wallet.Path145 = Path145;
-    //     wallet.Path1899 = Path1899;
-
-    //     try {
-    //         await localforage.setItem('wallet', wallet);
-    //     } catch (err) {
-    //         console.log(
-    //             `Error setting wallet to wallet indexedDb in migrateLegacyWallet()`,
-    //         );
-    //         console.log(err);
-    //     }
-
-    //     return wallet;
-    // };
 
     const writeWalletState = async (wallet, newState) => {
         // Add new state as an object on the active wallet
@@ -415,19 +354,6 @@ const useWallet = () => {
         for (let i = 0; i < savedWallets.length; i += 1) {
             if (savedWallets[i].name === currentlyActiveWallet.name) {
                 walletInSavedWallets = true;
-                // Check savedWallets for unmigrated currentlyActiveWallet
-                // if (isLegacyMigrationRequired(savedWallets[i])) {
-                //     // Case 1, described above
-                //     savedWallets[i].Path1899 = currentlyActiveWallet.Path1899;
-                //     savedWallets[i].Path145 = currentlyActiveWallet.Path145;
-                //     savedWallets[i].Path245 = currentlyActiveWallet.Path245;
-                // }
-
-                /*
-                Update wallet state
-                Note, this makes previous `walletUnmigrated` variable redundant
-                savedWallets[i] should always be updated, since wallet state can be expected to change most of the time
-                */
                 savedWallets[i].state = currentlyActiveWallet.state;
             }
         }
@@ -455,31 +381,14 @@ const useWallet = () => {
                 );
             }
         }
-        // If wallet does not have Path1899, add it
-        // or each of the Path1899, Path145, Path245 does not have a public key, add them
-        // by calling migrateLagacyWallet()
-        // if (isLegacyMigrationRequired(walletToActivate)) {
-        //     // Case 2, described above
-        //     console.log(
-        //         `Case 2: Wallet to activate does not have Path1899 or does not have public key in each Path`,
-        //     );
-        //     console.log(
-        //         `Wallet to activate from SavedWallets does not have Path1899 or does not have public key in each Path`,
-        //     );
-        //     console.log(`walletToActivate`, walletToActivate);
-        //     // walletToActivate = await migrateLegacyWallet(walletToActivate);
-        // } else {
-            // Otherwise activate it as normal
-            // Now that we have verified the last wallet was saved, we can activate the new wallet
-            try {
-                await localforage.setItem('wallet', walletToActivate);
-            } catch (err) {
-                console.log(
-                    `Error in localforage.setItem("wallet", walletToActivate) in activateWallet()`,
-                );
-                return false;
-            }
-        // }
+        try {
+            await localforage.setItem('wallet', walletToActivate);
+        } catch (err) {
+            console.log(
+                `Error in localforage.setItem("wallet", walletToActivate) in activateWallet()`,
+            );
+            return false;
+        }
         // Make sure stored wallet is in correct format to be used as live wallet
         if (isValidStoredWallet(walletToActivate)) {
             // Convert all the token balance figures to big numbers
@@ -489,52 +398,6 @@ const useWallet = () => {
 
         return walletToActivate;
     };
-
-    // const deleteWallet = async walletToBeDeleted => {
-    //     // delete a wallet
-    //     // returns true if wallet is successfully deleted
-    //     // otherwise returns false
-    //     // Load savedWallets
-    //     let savedWallets;
-    //     try {
-    //         savedWallets = await localforage.getItem('savedWallets');
-    //     } catch (err) {
-    //         console.log(
-    //             `Error in await localforage.getItem("savedWallets") in deleteWallet`,
-    //         );
-    //         console.log(err);
-    //         return false;
-    //     }
-    //     // Iterate over to find the wallet to be deleted
-    //     // Verify that no existing wallet has this name
-    //     let walletFoundAndRemoved = false;
-    //     for (let i = 0; i < savedWallets.length; i += 1) {
-    //         if (savedWallets[i].name === walletToBeDeleted.name) {
-    //             // Verify it has the same mnemonic too, that's a better UUID
-    //             if (savedWallets[i].mnemonic === walletToBeDeleted.mnemonic) {
-    //                 // Delete it
-    //                 savedWallets.splice(i, 1);
-    //                 walletFoundAndRemoved = true;
-    //             }
-    //         }
-    //     }
-    //     // If you don't find the wallet, return false
-    //     if (!walletFoundAndRemoved) {
-    //         return false;
-    //     }
-
-    //     // Resave savedWallets less the deleted wallet
-    //     try {
-    //         // Set walletName as the active wallet
-    //         await localforage.setItem('savedWallets', savedWallets);
-    //     } catch (err) {
-    //         console.log(
-    //             `Error in localforage.setItem("savedWallets", savedWallets) in deleteWallet()`,
-    //         );
-    //         return false;
-    //     }
-    //     return true;
-    // };
 
     const addNewSavedWallet = async importMnemonic => {
         // Add a new wallet to savedWallets from importMnemonic or just new wallet
@@ -620,23 +483,6 @@ const useWallet = () => {
         return wallet;
     };
 
-    // const validateMnemonic = (mnemonic) => {
-    //     let mnemonicTestOutput;
-
-    //     try {
-    //         mnemonicTestOutput = Mnemonic.fromPhrase(mnemonic);
-
-    //         if (mnemonicTestOutput.toString() === mnemonic) {
-    //             return true;
-    //         } else {
-    //             return false;
-    //         }
-    //     } catch (err) {
-    //         console.log(err);
-    //         return false;
-    //     }
-    // };
-
     const handleUpdateWallet = async setWallet => {
         await loadWalletFromStorageOnStartup(setWallet);
     };
@@ -670,73 +516,6 @@ const useWallet = () => {
         setCashtabSettings(currency.defaultSettings);
         return currency.defaultSettings;
     };
-
-    // With different currency selections possible, need unique intervals for price checks
-    // Must be able to end them and set new ones with new currencies
-    // const initializeFiatPriceApi = async selectedFiatCurrency => {
-    //     // Update fiat price and confirm it is set to make sure ap keeps loading state until this is updated
-    //     await fetchBchPrice(selectedFiatCurrency);
-    //     // Set interval for updating the price with given currency
-
-    //     const thisFiatInterval = setInterval(function () {
-    //         fetchBchPrice(selectedFiatCurrency);
-    //     }, 60000);
-
-    //     // set interval in state
-    //     setCheckFiatInterval(thisFiatInterval);
-    // };
-
-    // const clearFiatPriceApi = fiatPriceApi => {
-    //     // Clear fiat price check interval of previously selected currency
-    //     clearInterval(fiatPriceApi);
-    // };
-
-    // const changeCashtabSettings = async (key, newValue) => {
-    //     // Set loading to true as you do not want to display the fiat price of the last currency
-    //     // loading = true will lock the UI until the fiat price has updated
-    //     setLoading(true);
-    //     // Get settings from localforage
-    //     let currentSettings;
-    //     let newSettings;
-    //     try {
-    //         currentSettings = await localforage.getItem('settings');
-    //     } catch (err) {
-    //         console.log(`Error in changeCashtabSettings`, err);
-    //         // Set fiat price to null, which disables fiat sends throughout the app
-    //         setFiatPrice(null);
-    //         // Unlock the UI
-    //         setLoading(false);
-    //         return;
-    //     }
-    //     // Make sure function was called with valid params
-    //     if (
-    //         Object.keys(currentSettings).includes(key) &&
-    //         currency.settingsValidation[key].includes(newValue)
-    //     ) {
-    //         // Update settings
-    //         newSettings = currentSettings;
-    //         newSettings[key] = newValue;
-    //     }
-    //     // Set new settings in state so they are available in context throughout the app
-    //     setCashtabSettings(newSettings);
-    //     // If this settings change adjusted the fiat currency, update fiat price
-    //     if (key === 'fiatCurrency') {
-    //         clearFiatPriceApi(checkFiatInterval);
-    //         initializeFiatPriceApi(newValue);
-    //     }
-    //     // Write new settings in localforage
-    //     try {
-    //         await localforage.setItem('settings', newSettings);
-    //     } catch (err) {
-    //         console.log(
-    //             `Error writing newSettings object to localforage in changeCashtabSettings`,
-    //             err,
-    //         );
-    //         console.log(`newSettings`, newSettings);
-    //         // do nothing. If this happens, the user will see default currency next time they load the app.
-    //     }
-    //     setLoading(false);
-    // };
 
     // Parse for incoming XEC transactions
     if (
@@ -925,10 +704,8 @@ const useWallet = () => {
         // changeCashtabSettings,
         getActiveWalletFromLocalForage,
         forceWalletUpdate,
-        // validateMnemonic,
         getWalletDetails,
         getSavedWallets,
-        // migrateLegacyWallet,
         createWallet: async importMnemonic => {
             setLoading(true);
             const newWallet = await createWallet(importMnemonic);
@@ -953,7 +730,6 @@ const useWallet = () => {
             }
         },
         addNewSavedWallet,
-        // deleteWallet,
     };
 };
 

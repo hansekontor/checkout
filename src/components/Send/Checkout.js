@@ -24,13 +24,11 @@ import {
     currency
 } from '@components/Common/Ticker.js';
 import { Event } from '@utils/GoogleAnalytics';
-import { fiatToCrypto } from '@utils/validation';
 import { 
     getWalletState,
     fromSmallestDenomination
 } from '@utils/cashMethods';
 import ApiError from '@components/Common/ApiError';
-import PropsError from '@components/Common/PropsError';
 import { formatFiatBalance } from '@utils/validation';
 import cashaddr from 'ecashaddrjs';
 import { 
@@ -484,14 +482,6 @@ const Checkout = ({
                     ? cashtabSettings.fiatCurrency.toUpperCase()
                     : 'USD'
             }`;
-        } else {
-            fiatPriceString = `${
-                formData.value
-                    ? formatFiatBalance(
-                          Number(fiatToCrypto(formData.value, fiatPrice)),
-                      )
-                    : formatFiatBalance(0)
-            } ${currency.ticker}`;
         }
     }
 

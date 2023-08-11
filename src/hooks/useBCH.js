@@ -14,8 +14,8 @@ import {
 import { postPayment } from '@utils/bip70';
 import { 
     TXUtil,
-    authPubKeys,
-    buildOutScript
+    // authPubKeys,
+    // buildOutScript
 } from '@utils/selfMint';
 import cashaddr from 'ecashaddrjs';
 import { U64 } from 'n64';
@@ -861,27 +861,27 @@ export default function useBCH() {
 
             console.log(`${currency.tokenTicker} txid`, txidStr);
             
-            if (isSlp) {
-                const possibleExternalMint = TX.fromRaw(paymentAck.payment.transactions[0]);
-                const slpScript = script.SLP.fromRaw(possibleExternalMint.outputs[0].script.toRaw())
-                const isMint = slpScript.getType() === 'MINT';
-                const isVersion2 = slpScript.getString(2, 'hex') == '02';
-                if (isMint && isVersion2) {
-                    const slpOutputs = slpScript.code.slice(5);
-                    let mintQuantity = U64.fromNumber(0);
-                    for (let i = 0; i < slpOutputs.length; i++) {
-                        const valueU64 = U64.fromBE(slpOutputs[i].toData());
-                        mintQuantity.iadd(valueU64);
-                    }
-                    await writeMempoolMint({
-                        txid: txidStr, 
-                        token_id: slpScript.getData(4).toString('hex'),
-                        block: -1,
-                        minter_pubkey: wallet.Path1899.publicKey,
-                        mint_total_amount: mintQuantity.toInt(),
-                    });                    
-                }
-            }
+            // if (isSlp) {
+            //     const possibleExternalMint = TX.fromRaw(paymentAck.payment.transactions[0]);
+            //     const slpScript = script.SLP.fromRaw(possibleExternalMint.outputs[0].script.toRaw())
+            //     const isMint = slpScript.getType() === 'MINT';
+            //     const isVersion2 = slpScript.getString(2, 'hex') == '02';
+            //     if (isMint && isVersion2) {
+            //         const slpOutputs = slpScript.code.slice(5);
+            //         let mintQuantity = U64.fromNumber(0);
+            //         for (let i = 0; i < slpOutputs.length; i++) {
+            //             const valueU64 = U64.fromBE(slpOutputs[i].toData());
+            //             mintQuantity.iadd(valueU64);
+            //         }
+            //         await writeMempoolMint({
+            //             txid: txidStr, 
+            //             token_id: slpScript.getData(4).toString('hex'),
+            //             block: -1,
+            //             minter_pubkey: wallet.Path1899.publicKey,
+            //             mint_total_amount: mintQuantity.toInt(),
+            //         });                    
+            //     }
+            // }
         }
 
         let link;

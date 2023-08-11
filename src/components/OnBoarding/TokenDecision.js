@@ -14,7 +14,6 @@ import {
 } from "../../assets/styles/checkout.styles";
 import { QRCode } from '@components/Common/QRCode';
 import BigNumber from 'bignumber.js';
-import TokenList from '@components/Wallet/TokenList';
 // import { useHistory } from 'react-router-dom';
 // const { push } = useHistory();
 import { getPaymentRequest } from '../../utils/bip70';
@@ -65,11 +64,7 @@ const TokenDecision = ({
                 <>
                     <PrimaryButton onClick={() => passDecisionStatus(true)}>Proceed with current balance</PrimaryButton>
                     <PrimaryButton onClick={() => setShowQrCode(true)}>Show QR Code again</PrimaryButton>
-                    {paymentTokens.length > 0 ? (
-                        <TokenList tokens={paymentTokens} />
-                    ) : (
-                        <p>Waiting to receive Tokens...</p>
-                    )}
+                    <p>Waiting to receive Tokens...</p>
                 </>
 
             ) : (

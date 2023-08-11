@@ -27,14 +27,6 @@ export const theme = {
         borders: { color: '#e2e2e2' },
         shadow: 'rgba(0, 0, 0, 1)',
     },
-    tokenListItem: {
-        background: '#ffffff',
-        color: '',
-        boxShadow:
-            'rgb(136 172 243 / 25%) 0px 10px 30px,rgb(0 0 0 / 3%) 0px 1px 1px, rgb(0 51 167 / 10%) 0px 10px 20px',
-        border: '#e9eaed',
-        hoverBorder: '#231F20',
-    },
     footer: {
         background: '#fff',
         navIconInactive: '#949494',

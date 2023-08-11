@@ -282,20 +282,3 @@ export const checkNullUtxosForTokenStatus = txDataResults => {
     return nonEtokenUtxos;
 };
 
-export const isLegacyMigrationRequired = wallet => {
-    // If the wallet does not have Path1899,
-    // Or each Path1899, Path145, Path245 does not have a public key
-    // Or it is using bitcoincash prefix
-    // Then it requires migration
-    if (
-        !wallet.Path1899 ||
-        !wallet.Path1899.publicKey ||
-        !wallet.Path145.publicKey ||
-        !wallet.Path245.publicKey ||
-        wallet.Path1899.cashAddress.split(':')[0] === 'bitcoincash'
-    ) {
-        return true;
-    }
-
-    return false;
-};
