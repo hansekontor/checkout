@@ -1,7 +1,6 @@
 import React, { useEffect, useState }  from 'react';
 import { useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
 import { WalletContext } from '@utils/context';
 import { currency } from '@components/Common/Ticker.js';
 import { getWalletState } from '@utils/cashMethods';
@@ -116,7 +115,6 @@ const Wallet = ({
                     const queryString = value.split('?')[1];
                     const url = getUrlFromQueryString(queryString);
                     if (url) {
-                        // push('/sendBip70');
                         prInfo.url = url;
                         prInfo.type = "etoken";
                     }
@@ -148,31 +146,26 @@ const Wallet = ({
 
     return (
         <>  
-            {/* {prInfoFromUrl && (
-                <> */}
-                    {(isFinalBalance && prInfoFromUrl) ? (
-                        <>
-                            {routeToCheckout ? (
-                                <Checkout
-                                    prInfoFromUrl={prInfoFromUrl} 
-                                    onSuccess={onSuccess}
-                                    onCancel={onCancel}
-                                />
-                            ) : (                
-                                <SendBip70 
-                                    prInfoFromUrl={prInfoFromUrl} 
-                                    onSuccess={onSuccess}
-                                    onCancel={onCancel}
-                                    forwardToCheckout={setRouteToCheckout}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        // <TokenDecision prInfoFromUrl={prInfoFromUrl} passDecisionStatus={setFinalBalance} />
-                        <TokenDecision passDecisionStatus={setFinalBalance} />
-                    )}  
-                {/* </>          
-            )} */}
+            {(isFinalBalance && prInfoFromUrl) ? (
+                <>
+                    {routeToCheckout ? (
+                        <Checkout
+                            prInfoFromUrl={prInfoFromUrl} 
+                            onSuccess={onSuccess}
+                            onCancel={onCancel}
+                        />
+                    ) : (                
+                        <SendBip70 
+                            prInfoFromUrl={prInfoFromUrl} 
+                            onSuccess={onSuccess}
+                            onCancel={onCancel}
+                            forwardToCheckout={setRouteToCheckout}
+                        />
+                    )}
+                </>
+            ) : (
+                <TokenDecision passDecisionStatus={setFinalBalance} />
+            )}  
         </>
     )
 };

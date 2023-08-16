@@ -91,6 +91,7 @@ const useWallet = () => {
             wallet.state = liveWalletState;
 
             setWallet(wallet);
+            console.log("useWallet loadWalletFromStorageOnStartup wallet set");
             return setLoading(false);
         }
         // Loading will remain true until API calls populate this legacy wallet
@@ -640,6 +641,7 @@ const useWallet = () => {
         update({
             wallet,
         }, forceFullUpdate).finally(() => {
+            console.log("useWallet forceWalletUpdate Update wallet");
             setLoading(false);
         });
     }
@@ -701,34 +703,7 @@ const useWallet = () => {
         loading,
         apiError,
         cashtabSettings,
-        // changeCashtabSettings,
-        getActiveWalletFromLocalForage,
         forceWalletUpdate,
-        getWalletDetails,
-        getSavedWallets,
-        createWallet: async importMnemonic => {
-            setLoading(true);
-            const newWallet = await createWallet(importMnemonic);
-            setWallet(newWallet);
-            update({
-                wallet: newWallet,
-            }).finally(() => setLoading(false));
-        },
-        activateWallet: async walletToActivate => {
-            setLoading(true);
-            const newWallet = await activateWallet(walletToActivate);
-            setWallet(newWallet);
-            if (isValidStoredWallet(walletToActivate)) {
-                // If you have all state parameters needed in storage, immediately load the wallet
-                setLoading(false);
-            } else {
-                // If the wallet is missing state parameters in storage, wait for API info
-                // This handles case of unmigrated legacy wallet
-                update({
-                    wallet: newWallet,
-                }).finally(() => setLoading(false));
-            }
-        },
         addNewSavedWallet,
     };
 };
