@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
 import { WalletContext } from '@utils/context';
 import { getWalletState } from '@utils/cashMethods';
 import PropTypes from 'prop-types';
@@ -21,9 +20,8 @@ const TokenDecision = ({
 }) => {
     const ContextValue = React.useContext(WalletContext);
     const { wallet } = ContextValue;
-    const { balances, tokens } = getWalletState(wallet);
-    console.log("PaymentTypeDecision balances", balances);
-    console.log("PaymentTypeDecision tokens", tokens);
+    const { tokens } = getWalletState(wallet);
+
     const [showQrCode, setShowQrCode] = useState(false);
     const [listenForTx, setListenForTx] = useState(false);
 
@@ -35,12 +33,11 @@ const TokenDecision = ({
     }
 
     const useExistingTokens = () => {
-        console.log("useExistingTokens")
         setShowQrCode(true);
         setListenForTx(true);
     }
 
-    useEffect(async () => { // ?
+    useEffect(async () => { 
         if (paymentTokens.length > 0) {
             passDecisionStatus(true);
         }

@@ -129,14 +129,9 @@ const Checkout = ({
     const [postageData, setPostageData] = useState(null);
     const [usePostage, setUsePostage] = useState(false);
 
-    const prefixesArray = [
-        ...currency.prefixes,
-        ...currency.tokenPrefixes
-    ]
-
-    const showModal = () => {
-        setIsModalVisible(true);
-    };
+    // const showModal = () => {
+    //     setIsModalVisible(true);
+    // };
 
     const handleOk = () => {
         // setIsModalVisible(false);
@@ -151,8 +146,6 @@ const Checkout = ({
     const sleep = (ms) => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
-
-    const history = useHistory();
 
     const { 
         getBcashRestUrl, 
@@ -765,13 +758,6 @@ const Checkout = ({
         </>
     );
 };
-
-/*
-passLoadingStatus must receive a default prop that is a function
-in order to pass the rendering unit test in SendBip70.test.js
-
-status => {console.log(status)} is an arbitrary stub function
-*/
 
 Checkout.defaultProps = {
     passLoadingStatus: status => {

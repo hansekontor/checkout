@@ -23,9 +23,6 @@ import {
 } from '@components/Common/Ticker.js';
 import { Event } from '@utils/GoogleAnalytics';
 import {
-    shouldRejectAmountInput,
-} from '@utils/validation';
-import {
     ConvertAmount,
     AlertMsg,
 } from '@components/Common/Atoms';
@@ -35,10 +32,7 @@ import {
 } from '@utils/cashMethods';
 import ApiError from '@components/Common/ApiError';
 import { formatFiatBalance } from '@utils/validation';
-import styled from 'styled-components';
 import cashaddr from 'ecashaddrjs';
-import { getUrlFromQueryString } from '@utils/bip70';
-import { getPaymentRequest } from '../../utils/bip70';
 import { 
     Script,
     script
@@ -51,7 +45,6 @@ import {
 	CheckoutStyles,
 	PaymentDetails,
 	PurchaseAuthCode,
-	Heading,
 	ListItem,
 	CheckoutIcon,
 	HorizontalSpacer,
@@ -104,13 +97,9 @@ const SendBip70 = ({
             tokenFormattedBalance = '0';
         }
     }
-    const [queryStringText, setQueryStringText] = useState(null);
     const [sendBchAddressError, setSendBchAddressError] = useState(false);
     const [sendBchAmountError, setSendBchAmountError] = useState(false);
     const [selectedCurrency, setSelectedCurrency] = useState(currency.ticker);
-
-    // Support cashtab button from web pages
-    // const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
 
     // Show a confirmation modal on transactions created by populating form from web page button
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -122,11 +111,6 @@ const SendBip70 = ({
     // Postage Protocol Check (for BURN)
     const [postageData, setPostageData] = useState(null);
     const [usePostage, setUsePostage] = useState(false);
-
-    const prefixesArray = [
-        ...currency.prefixes,
-        ...currency.tokenPrefixes
-    ]
 
     const showModal = () => {
         setIsModalVisible(true);
@@ -164,8 +148,6 @@ const SendBip70 = ({
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    const history = useHistory();
-
     const { 
         getBcashRestUrl, 
         sendBip70,
@@ -187,10 +169,6 @@ const SendBip70 = ({
                 if (difference < 0 && formData.address != '**BURN**') 
                     forwardToCheckout(true);
                     return;
-                // // Set purchase modal visible and set amount to purchase
-                // setIsPurchaseModalVisible(difference < 0);
-                // const purchaseAmount = difference < 0 ? Math.abs(difference) : 0
-                // setPurchaseTokenAmount(purchaseAmount);
             }
         }
     }, [tokenFormattedBalance]);
@@ -234,7 +212,6 @@ const SendBip70 = ({
                         if (purchaseTokenIds.includes(formData.token?.tokenId)) {
                             if (difference < 0) 
                                 forwardToCheckout(true);
-                                // return history.push('/checkout');
                                 return;
                         }
                     }
@@ -330,7 +307,6 @@ const SendBip70 = ({
             return;
         }
 
-        // Event("Category", "Action", "Label")
         // Track number of XEC BIP70 transactions
         Event('SendBip70.js', 'SendBip70', type);
 
@@ -376,32 +352,6 @@ const SendBip70 = ({
         // Manually disable loading
         passLoadingStatus(false);
     }
-
-    const handleSelectedCurrencyChange = e => {
-        setSelectedCurrency(e);
-        // Clear input field to prevent accidentally sending 1 BCH instead of 1 USD
-        setFormData(p => ({
-            ...p,
-            value: '',
-        }));
-    };
-
-    const handleBchAmountChange = e => {
-        const { value, name } = e.target;
-        let bchValue = value;
-        const error = shouldRejectAmountInput(
-            bchValue,
-            selectedCurrency,
-            fiatPrice,
-            balances.totalBalance,
-        );
-        setSendBchAmountError(error);
-
-        setFormData(p => ({
-            ...p,
-            [name]: value,
-        }));
-    };
 
     const checkSufficientFunds = () => {
         if (formData.token) {
@@ -605,13 +555,6 @@ const SendBip70 = ({
         </>
     );
 };
-
-/*
-passLoadingStatus must receive a default prop that is a function
-in order to pass the rendering unit test in SendBip70.test.js
-
-status => {console.log(status)} is an arbitrary stub function
-*/
 
 SendBip70.defaultProps = {
     passLoadingStatus: status => {
