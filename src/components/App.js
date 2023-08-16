@@ -6,7 +6,6 @@ import '../index.css';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { theme } from '@assets/styles/theme';
 const Wallet = lazy(() => import('./Wallet/Wallet'));
-const Checkout = lazy(() => import('./Send/Checkout'));
 const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
 import './App.css';
@@ -145,16 +144,16 @@ export const AbcLogo = styled.img`
 
 const App = () => {
     const ContextValue = React.useContext(WalletContext);
-    const { wallet, previousWallet, loading } = ContextValue;
+    const { wallet, loading } = ContextValue;
     const [loadingUtxosAfterSend, setLoadingUtxosAfterSend] = useState(false);
     // If wallet is unmigrated, do not show page until it has migrated
     // An invalid wallet will be validated/populated after the next API call, ETA 10s
     const validWallet = isValidStoredWallet(wallet);
     // const location = useLocation();
-    const history = useHistory();
+    // const history = useHistory();
 
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
-
+    console.log("loading", loading, "(wallet && !validWallet)", (wallet && !validWallet));
 
     return (
         <ThemeProvider theme={theme}>
@@ -190,13 +189,6 @@ const App = () => {
                                                 />
                                             }
                                         </Route>
-                                        {/* <Route path="/checkout">
-                                            <Checkout
-                                                paymentRequest={paymentRequest}
-                                                onSuccess={onSuccess}
-                                                onCancel={onCancel}
-                                            />
-                                        </Route> */}
                                         <Route component={NotFound} />
                                     </Switch>
                                 </Suspense>

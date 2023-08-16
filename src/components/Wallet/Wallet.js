@@ -148,9 +148,9 @@ const Wallet = ({
 
     return (
         <>  
-            {prInfoFromUrl && (
-                <>
-                    {isFinalBalance ? (
+            {/* {prInfoFromUrl && (
+                <> */}
+                    {(isFinalBalance && prInfoFromUrl) ? (
                         <>
                             {routeToCheckout ? (
                                 <Checkout
@@ -168,10 +168,11 @@ const Wallet = ({
                             )}
                         </>
                     ) : (
-                        <TokenDecision prInfoFromUrl={prInfoFromUrl} passDecisionStatus={setFinalBalance} />
+                        // <TokenDecision prInfoFromUrl={prInfoFromUrl} passDecisionStatus={setFinalBalance} />
+                        <TokenDecision passDecisionStatus={setFinalBalance} />
                     )}  
-                </>          
-            )}
+                {/* </>          
+            )} */}
         </>
     )
 };

@@ -21,10 +21,10 @@ import { getPaymentRequest } from '../../utils/bip70';
 
 
 const TokenDecision = ({
-    prInfoFromUrl,
+    // prInfoFromUrl,
     passDecisionStatus 
 }) => {
-    console.log("Onboarding paymentRequest", prInfoFromUrl);
+    // console.log("Onboarding paymentRequest", prInfoFromUrl);
     const ContextValue = React.useContext(WalletContext);
     const { wallet } = ContextValue;
     const { balances, tokens } = getWalletState(wallet);
@@ -37,8 +37,8 @@ const TokenDecision = ({
     const tokenId = "4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a";
     const paymentTokens = tokens.filter(token => token.tokenId === tokenId);
 
-    const amountArray = prInfoFromUrl.paymentDetails.merchantDataJson.ipn_body.amount1;
-    const purchaseTokenAmount = amountArray.reduce((acc, amount) => acc + Number(amount), 0);
+    // const amountArray = prInfoFromUrl.paymentDetails.merchantDataJson.ipn_body.amount1;
+    // const purchaseTokenAmount = amountArray.reduce((acc, amount) => acc + Number(amount), 0);
     // const feeAmount = (.50 + (purchaseTokenAmount * .06)).toFixed(2); // Add 50 cent fixed fee to 6% percentage
     // const totalAmount = (Number(purchaseTokenAmount) + Number(feeAmount)).toFixed(2);
 
@@ -53,10 +53,14 @@ const TokenDecision = ({
     }
 
     useEffect(async () => { // ?
-        if (isFinalBalance) {
+        console.log("TokenDecision useEffect clause");
+    
+        console.log("TokenDecision useEffect paymentTokens.length", paymentTokens.length);
+        if (paymentTokens.length > 0) {
+            console.log("TokenDecision useEffect condition true");
             passDecisionStatus(true);
         }
-    }, []);
+    }, [paymentTokens]);
         
     return (
         <>
@@ -80,7 +84,7 @@ const TokenDecision = ({
                     <AgreeModal>
                         <Heading>Send Tokens to the checkout address:</Heading>
                         <p>You send Tokens to this address at your own risk.</p>
-                        <p>Invoice amount: ${purchaseTokenAmount}</p>
+                        {/* <p>Invoice amount: ${purchaseTokenAmount}</p> */}
                         <StyledCollapse>
                             <Panel header="Click to back up your checkout seed phrase" key="1">
                                 <p className="notranslate">
@@ -97,7 +101,7 @@ const TokenDecision = ({
 };
 
 TokenDecision.propTypes = {
-    prInfoFromUrl: PropTypes.object,
+    // prInfoFromUrl: PropTypes.object,
     passDecisionStatus: PropTypes.func
 };
 
