@@ -1,6 +1,4 @@
-# Cashtab
-
-## Self Mint Checkout
+# Self Mint Checkout
 
 ![CashAppHome](./screenshots/ss-readme.png)
 
