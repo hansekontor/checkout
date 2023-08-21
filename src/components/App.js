@@ -179,7 +179,6 @@ const App = () => {
                                 <CashTabLogo src={CashTab} alt="cashtab" />
                                 {/*Begin component not included in extension as replaced by open in tab link*/}
                             </HeaderCtn>
-                            <WalletLabel name={wallet.name}></WalletLabel>
                                 <Suspense fallback={codeSplitLoader}>
                                     <Switch>
                                         <Route path="/">
