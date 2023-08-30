@@ -10,14 +10,9 @@ const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
 import './App.css';
 import { WalletContext } from '@utils/context';
-import { isValidStoredWallet } from '@utils/cashMethods';
-import WalletLabel from '@components/Common/WalletLabel.js';
 import {
     Route,
-    Redirect,
     Switch,
-    useLocation,
-    useHistory,
 } from 'react-router-dom';
 import ABC from '@assets/logo_topright.png';
 
@@ -144,24 +139,14 @@ export const AbcLogo = styled.img`
 
 const App = () => {
     const ContextValue = React.useContext(WalletContext);
-    const { wallet, loading } = ContextValue;
-    const [loadingUtxosAfterSend, setLoadingUtxosAfterSend] = useState(false);
-    // If wallet is unmigrated, do not show page until it has migrated
-    // An invalid wallet will be validated/populated after the next API call, ETA 10s
-    const validWallet = isValidStoredWallet(wallet);
-    // const location = useLocation();
-    // const history = useHistory();
-
+    const { loading } = ContextValue;
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
-    console.log("loading", loading, "(wallet && !validWallet)", (wallet && !validWallet));
 
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
             <Spin
-                spinning={
-                    loading || (wallet && !validWallet)
-                }
+                spinning={loading}
                 indicator={CashLoadingIcon}
             >
                 <CustomApp>
@@ -182,11 +167,9 @@ const App = () => {
                                 <Suspense fallback={codeSplitLoader}>
                                     <Switch>
                                         <Route path="/">
-                                            {(wallet && wallet.Path1899) &&
                                                 <Wallet 
                                                     {...window.xprops}
                                                 />
-                                            }
                                         </Route>
                                         <Route component={NotFound} />
                                     </Switch>

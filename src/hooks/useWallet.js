@@ -693,8 +693,6 @@ const useWallet = () => {
 
     useEffect(async () => {
         handleUpdateWallet(setWallet);
-        // const initialSettings = await loadCashtabSettings();
-        // initializeFiatPriceApi(initialSettings.fiatCurrency);
     }, []);
 
     return {
@@ -703,7 +701,18 @@ const useWallet = () => {
         loading,
         apiError,
         cashtabSettings,
+        getActiveWalletFromLocalForage,
         forceWalletUpdate,
+        getWalletDetails,
+        getSavedWallets,
+        createWallet: async importMnemonic => {
+            setLoading(true);
+            const newWallet = await createWallet(importMnemonic);
+            setWallet(newWallet);
+            update({
+                wallet: newWallet,
+            }).finally(() => setLoading(false));
+        },
         addNewSavedWallet,
     };
 };

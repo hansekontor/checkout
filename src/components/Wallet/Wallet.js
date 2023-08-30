@@ -3,12 +3,14 @@ import { useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import { currency } from '@components/Common/Ticker.js';
-import { getWalletState } from '@utils/cashMethods';
 import { getUrlFromQueryString } from '@utils/bip70';
 import { getPaymentRequest } from '../../utils/bip70';
 import Checkout from '@components/Send/Checkout';
 import SendBip70 from '@components/Send/SendBip70';
 import TokenDecision from '@components/OnBoarding/TokenDecision';
+import Onboarding from '@components/OnBoarding/OnBoarding';
+import { LoadingCtn } from '@components/Common/Atoms';
+import { isValidStoredWallet } from '@utils/cashMethods';
 
 
 const Wallet = ({    
@@ -17,12 +19,10 @@ const Wallet = ({
     onSuccess, 
     onCancel
 }) => {
-    const ContextValue = React.useContext(WalletContext);
-    const { wallet, fiatPrice, apiError, cashtabSettings } = ContextValue;
-    const walletState = getWalletState(wallet);
-    const { balances, parsedTxHistory, tokens } = walletState;
 
-    const hasHistory = parsedTxHistory && parsedTxHistory.length > 0;
+    const ContextValue = React.useContext(WalletContext);
+    const { wallet, loading } = ContextValue;
+    const validWallet = isValidStoredWallet(wallet);
 
     const prefixesArray = [
         ...currency.prefixes,
@@ -143,29 +143,41 @@ const Wallet = ({
         } 
     }, []);
 
-
     return (
         <>  
-            {(isFinalBalance && prInfoFromUrl) ? (
-                <>
-                    {routeToCheckout ? (
-                        <Checkout
-                            prInfoFromUrl={prInfoFromUrl} 
-                            onSuccess={onSuccess}
-                            onCancel={onCancel}
-                        />
-                    ) : (                
-                        <SendBip70 
-                            prInfoFromUrl={prInfoFromUrl} 
-                            onSuccess={onSuccess}
-                            onCancel={onCancel}
-                            forwardToCheckout={setRouteToCheckout}
-                        />
-                    )}
-                </>
+            {loading || (wallet && !validWallet) ? (
+                <LoadingCtn />
             ) : (
-                <TokenDecision passDecisionStatus={setFinalBalance} />
-            )}  
+                <>
+                    {(isFinalBalance && prInfoFromUrl) ? (
+                        <>
+                            {routeToCheckout ? (
+                                <Checkout
+                                    prInfoFromUrl={prInfoFromUrl} 
+                                    onSuccess={onSuccess}
+                                    onCancel={onCancel}
+                                />
+                            ) : (                
+                                <SendBip70 
+                                    prInfoFromUrl={prInfoFromUrl} 
+                                    onSuccess={onSuccess}
+                                    onCancel={onCancel}
+                                    forwardToCheckout={setRouteToCheckout}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            {(wallet && wallet.Path1899 ) ? (
+                                <TokenDecision passDecisionStatus={setFinalBalance} />
+                            ) : (
+                                <Onboarding />
+                            )}
+                        </> 
+                    )}  
+                </>
+            )}
+                
         </>
     )
 };
