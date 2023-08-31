@@ -42,14 +42,9 @@ const Wallet = ({
     useEffect(async() => {
         const prInfo = {};
         if (
-            !window.location ||
-            !window.location.hash ||
-            (window.location.search == '' && window.location.hash === '#/sendBip70') ||
             hasPaymentUrl ||
             hasPaymentRequest
         ) {
-            console.log("useEffect first conditional hit");
-
             if (hasPaymentRequest) {            
                 const allowedParameters = [ 
                     "invoice", 
@@ -184,9 +179,6 @@ const Wallet = ({
 Wallet.defaultProps = {
     paymentUrl: "",
     paymentRequest: {},
-    passLoadingStatus: status => {
-        console.log(status);
-    },
     onSuccess: link => {
         console.log("onSuccess", link);
     },
@@ -200,7 +192,6 @@ Wallet.propTypes = {
     paymentRequest: PropTypes.object,
     onSuccess: PropTypes.func,
     onCancel: PropTypes.func,
-    passLoadingStatus: PropTypes.func
 };
 
 export default Wallet;
