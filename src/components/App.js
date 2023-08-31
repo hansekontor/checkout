@@ -1,6 +1,5 @@
 import React, { useState, Suspense, lazy } from 'react';
 import 'antd/dist/antd.less';
-import { Spin } from 'antd';
 import { CashLoadingIcon, LoadingBlock } from '@components/Common/CustomIcons';
 import '../index.css';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
@@ -9,7 +8,6 @@ const Wallet = lazy(() => import('./Wallet/Wallet'));
 const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
 import './App.css';
-import { WalletContext } from '@utils/context';
 import {
     Route,
     Switch,
@@ -138,17 +136,11 @@ export const AbcLogo = styled.img`
 `;
 
 const App = () => {
-    const ContextValue = React.useContext(WalletContext);
-    const { loading } = ContextValue;
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
 
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
-            <Spin
-                spinning={loading}
-                indicator={CashLoadingIcon}
-            >
                 <CustomApp>
                     <WalletBody>
                         <WalletCtn>
@@ -177,7 +169,6 @@ const App = () => {
                         </WalletCtn>
                     </WalletBody>
                 </CustomApp>
-            </Spin>
         </ThemeProvider>
     );
 };
