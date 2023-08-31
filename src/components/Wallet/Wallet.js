@@ -33,7 +33,7 @@ const Wallet = ({
 
     const [isFinalBalance, setFinalBalance] = useState(false);
     const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
-    const [routeToCheckout, setRouteToCheckout] = useState(false);
+    const [forwardToCheckout, setForwardToCheckout] = useState(false);
 
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
     const hasPaymentRequest = 'customer_id' in paymentRequest // url trumps new request
@@ -140,13 +140,11 @@ const Wallet = ({
 
     return (
         <>  
-            {loading || (wallet && !validWallet) ? (
-                <LoadingCtn />
-            ) : (
+            {!loading && (wallet && validWallet) && (
                 <>
                     {(isFinalBalance && prInfoFromUrl) ? (
                         <>
-                            {routeToCheckout ? (
+                            {forwardToCheckout ? (
                                 <Checkout
                                     prInfoFromUrl={prInfoFromUrl} 
                                     onSuccess={onSuccess}
@@ -157,7 +155,7 @@ const Wallet = ({
                                     prInfoFromUrl={prInfoFromUrl} 
                                     onSuccess={onSuccess}
                                     onCancel={onCancel}
-                                    forwardToCheckout={setRouteToCheckout}
+                                    forwardToCheckout={setForwardToCheckout}
                                 />
                             )}
                         </>
