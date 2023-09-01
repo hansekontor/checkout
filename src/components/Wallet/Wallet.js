@@ -141,7 +141,9 @@ const Wallet = ({
 
     return (
         <>  
-            {!loading && (wallet && validWallet) && (
+            {loading || (wallet && !validWallet) ? (
+                <LoadingCtn />
+            ) : (
                 <>
                     {(isFinalBalance && prInfoFromUrl) ? (
                         <>
