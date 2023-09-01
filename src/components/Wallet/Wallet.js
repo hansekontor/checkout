@@ -17,7 +17,8 @@ const Wallet = ({
     paymentUrl, 
     paymentRequest = {}, 
     onSuccess, 
-    onCancel
+    onCancel, 
+    passLoadingStatus
 }) => {
 
     const ContextValue = React.useContext(WalletContext);
@@ -149,6 +150,7 @@ const Wallet = ({
                                     prInfoFromUrl={prInfoFromUrl} 
                                     onSuccess={onSuccess}
                                     onCancel={onCancel}
+                                    passLoadingStatus={passLoadingStatus}
                                 />
                             ) : (                
                                 <SendBip70 
@@ -156,6 +158,7 @@ const Wallet = ({
                                     onSuccess={onSuccess}
                                     onCancel={onCancel}
                                     forwardToCheckout={setForwardToCheckout}
+                                    passLoadingStatus={passLoadingStatus}
                                 />
                             )}
                         </>
@@ -178,10 +181,13 @@ Wallet.defaultProps = {
     paymentUrl: "",
     paymentRequest: {},
     onSuccess: link => {
-        console.log("onSuccess", link);
+        console.log("Payment successful:", link);
     },
     onCancel: status => {
-        console.log("onCancel:", status);
+        console.log("Payment cancelled:", status);
+    },
+    passLoadingStatus: status => {
+        console.log("loadingStatus:", status);
     }
 };
 
@@ -190,6 +196,7 @@ Wallet.propTypes = {
     paymentRequest: PropTypes.object,
     onSuccess: PropTypes.func,
     onCancel: PropTypes.func,
+    passLoadingStatus: PropTypes.func
 };
 
 export default Wallet;
