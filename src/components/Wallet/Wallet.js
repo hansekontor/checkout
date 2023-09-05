@@ -40,6 +40,10 @@ const Wallet = ({
     const hasPaymentRequest = 'customer_id' in paymentRequest // url trumps new request
                     && 'amount' in paymentRequest && !hasPaymentUrl;
 
+    if (!hasPaymentUrl && !hasPaymentRequest) {
+        onCancel("Error: Invalid Properties");
+    }
+
     useEffect(async() => {
         const prInfo = {};
         if (
@@ -99,11 +103,11 @@ const Wallet = ({
                 const param = txInfoArr[i]
                     .slice(0, delimiterIndex)
                     .toLowerCase();
-                // Forward to selfMint if auth code is specified
-                if (param == 'mintauth') {
-                    console.log('has mintauth')
-                    return push('/selfMint');
-                }
+                // // Forward to selfMint if auth code is specified
+                // if (param == 'mintauth') {
+                //     console.log('has mintauth')
+                //     return push('/selfMint');
+                // }
 
                 const encodedValue = txInfoArr[i].slice(delimiterIndex+1);
                 const value = decodeURIComponent(encodedValue);
@@ -133,7 +137,7 @@ const Wallet = ({
                     'Failed to fetch invoice. May be expired or invalid', 
                     `Fetching invoice: ${prInfo.url}`
                 );
-                onCancel();
+                onCancel(`Failed to fetch invoice: ${prInfo.url}. May be expired or invalid`);
                 await sleep(3000);
                 window.close();
             }
