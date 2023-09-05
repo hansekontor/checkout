@@ -1,14 +1,14 @@
-import React, { useEffect, useState }  from 'react';
+import React, { useEffect, useState, lazy, Suspense }  from 'react';
 import { useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import { currency } from '@components/Common/Ticker.js';
 import { getUrlFromQueryString } from '@utils/bip70';
 import { getPaymentRequest } from '../../utils/bip70';
-import Checkout from '@components/Send/Checkout';
-import SendBip70 from '@components/Send/SendBip70';
-import TokenDecision from '@components/OnBoarding/TokenDecision';
-import Onboarding from '@components/OnBoarding/OnBoarding';
+const Checkout = lazy(() => import('../Send/Checkout'));
+const SendBip70 = lazy(() => import('../Send/SendBip70'));
+const TokenDecision = lazy(() => import('/OnBoarding/TokenDecision'));
+const Onboarding = lazy(() => import('../OnBoarding/OnBoarding'));
 import { LoadingCtn } from '@components/Common/Atoms';
 import { isValidStoredWallet } from '@utils/cashMethods';
 
@@ -44,7 +44,8 @@ const Wallet = ({
         const prInfo = {};
         if (
             hasPaymentUrl ||
-            hasPaymentRequest
+            hasPaymentRequest ||
+            !prInfoFromUrl
         ) {
             if (hasPaymentRequest) {            
                 const allowedParameters = [ 
@@ -118,7 +119,7 @@ const Wallet = ({
             }
         }
 
-        if (prInfo.url && prInfo.type) {
+        if (prInfo.url && prInfo.type && !prInfoFromUrl) {
             try {
                 prInfo.paymentDetails = (await getPaymentRequest(
                     prInfo.url, 
@@ -145,34 +146,36 @@ const Wallet = ({
                 <LoadingCtn />
             ) : (
                 <>
-                    {(isFinalBalance && prInfoFromUrl) ? (
-                        <>
-                            {forwardToCheckout ? (
-                                <Checkout
-                                    prInfoFromUrl={prInfoFromUrl} 
-                                    onSuccess={onSuccess}
-                                    onCancel={onCancel}
-                                    passLoadingStatus={passLoadingStatus}
-                                />
-                            ) : (                
-                                <SendBip70 
-                                    prInfoFromUrl={prInfoFromUrl} 
-                                    onSuccess={onSuccess}
-                                    onCancel={onCancel}
-                                    forwardToCheckout={setForwardToCheckout}
-                                    passLoadingStatus={passLoadingStatus}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            {(wallet && wallet.Path1899 ) ? (
-                                <TokenDecision passDecisionStatus={setFinalBalance} />
-                            ) : (
-                                <Onboarding />
-                            )}
-                        </> 
-                    )}  
+                    <Suspense fallback={<LoadingCtn />}>
+                        {(isFinalBalance && prInfoFromUrl) ? (
+                            <>
+                                {forwardToCheckout ? (
+                                    <Checkout
+                                        prInfoFromUrl={prInfoFromUrl} 
+                                        onSuccess={onSuccess}
+                                        onCancel={onCancel}
+                                        passLoadingStatus={passLoadingStatus}
+                                    />
+                                ) : (                
+                                    <SendBip70 
+                                        prInfoFromUrl={prInfoFromUrl} 
+                                        onSuccess={onSuccess}
+                                        onCancel={onCancel}
+                                        forwardToCheckout={setForwardToCheckout}
+                                        passLoadingStatus={passLoadingStatus}
+                                    />
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {(wallet && wallet.Path1899 ) ? (
+                                    <TokenDecision passDecisionStatus={setFinalBalance} />
+                                ) : (
+                                    <Onboarding />
+                                )}
+                            </> 
+                        )}  
+                    </Suspense>
                 </>
             )}  
         </>

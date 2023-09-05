@@ -159,9 +159,9 @@ const App = () => {
                                 <Suspense fallback={codeSplitLoader}>
                                     <Switch>
                                         <Route path="/">
-                                                <Wallet 
-                                                    {...window.xprops}
-                                                />
+                                            <Wallet 
+                                                {...window.xprops}
+                                            />
                                         </Route>
                                         <Route component={NotFound} />
                                     </Switch>
