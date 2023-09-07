@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    useHistory
-} from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import { Bip70AddressSingle } from '@components/Common/EnhancedInputs';
@@ -55,7 +53,6 @@ const SendBip70 = ({
     prInfoFromUrl,
     onSuccess, 
     onCancel, 
-    forwardToCheckout, 
     passLoadingStatus
  }) => {
     // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
@@ -112,6 +109,8 @@ const SendBip70 = ({
     const [postageData, setPostageData] = useState(null);
     const [usePostage, setUsePostage] = useState(false);
 
+    const history = useHistory();
+
     const showModal = () => {
         setIsModalVisible(true);
     };
@@ -167,7 +166,7 @@ const SendBip70 = ({
                 .toFixed(formData.token.decimals);
             if (purchaseTokenIds.includes(formData.token?.tokenId)) {
                 if (difference < 0 && formData.address != '**BURN**') 
-                    forwardToCheckout(true);
+                    history.push("/wallet/checkout");
                     return;
             }
         }
@@ -211,7 +210,7 @@ const SendBip70 = ({
                             .toFixed(formData.token.decimals);
                         if (purchaseTokenIds.includes(formData.token?.tokenId)) {
                             if (difference < 0) 
-                                forwardToCheckout(true);
+                                history.push("/wallet/checkout");
                                 return;
                         }
                     }

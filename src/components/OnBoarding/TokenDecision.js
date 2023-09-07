@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory, Redirect } from 'react-router-dom';
 import { WalletContext } from '@utils/context';
 import { getWalletState } from '@utils/cashMethods';
 import PropTypes from 'prop-types';
@@ -18,6 +19,7 @@ import { QRCode } from '@components/Common/QRCode';
 const TokenDecision = ({
     passDecisionStatus 
 }) => {
+    console.log("TokenDecision.js called");
     const ContextValue = React.useContext(WalletContext);
     const { wallet } = ContextValue;
     const { tokens } = getWalletState(wallet);
@@ -28,6 +30,8 @@ const TokenDecision = ({
     const tokenId = "4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a";
     const paymentTokens = tokens.filter(token => token.tokenId === tokenId);
 
+    const history = useHistory();
+    
     const sleep = (ms) => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -39,22 +43,26 @@ const TokenDecision = ({
 
     useEffect(async () => { 
         if (paymentTokens.length > 0) {
-            passDecisionStatus(true);
+            forwardToSendBip70();
         }
     }, [paymentTokens]);
         
+    const forwardToSendBip70 = () => {
+        return history.push("/wallet/sendBip70");
+    }
+
     return (
         <>
             {listenForTx ? (                
                 <>
-                    <PrimaryButton onClick={() => passDecisionStatus(true)}>Proceed with current balance</PrimaryButton>
+                    <PrimaryButton onClick={() => forwardToSendBip70()}>Proceed with current balance</PrimaryButton>
                     <PrimaryButton onClick={() => setShowQrCode(true)}>Show QR Code again</PrimaryButton>
                     <p>Waiting to receive Tokens...</p>
                 </>
 
             ) : (
                 <>              
-                    <PrimaryButton onClick={() => passDecisionStatus(true)}>Fiat Only Payment</PrimaryButton>
+                    <PrimaryButton onClick={() => forwardToSendBip70()}>Fiat Only Payment</PrimaryButton>
                     <PrimaryButton onClick={() => useExistingTokens()}>Use existing Tokens in Payment</PrimaryButton>
                 </>
             )}

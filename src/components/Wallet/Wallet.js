@@ -1,5 +1,5 @@
 import React, { useEffect, useState, lazy, Suspense }  from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, Redirect, Route, Switch } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import { currency } from '@components/Common/Ticker.js';
@@ -7,10 +7,11 @@ import { getUrlFromQueryString } from '@utils/bip70';
 import { getPaymentRequest } from '../../utils/bip70';
 const Checkout = lazy(() => import('../Send/Checkout'));
 const SendBip70 = lazy(() => import('../Send/SendBip70'));
-const TokenDecision = lazy(() => import('/OnBoarding/TokenDecision'));
+const TokenDecision = lazy(() => import('../OnBoarding/TokenDecision'));
 const Onboarding = lazy(() => import('../OnBoarding/OnBoarding'));
 import { LoadingCtn } from '@components/Common/Atoms';
 import { isValidStoredWallet } from '@utils/cashMethods';
+import OnBoarding from '../OnBoarding/OnBoarding';
 
 
 const Wallet = ({    
@@ -18,9 +19,8 @@ const Wallet = ({
     paymentRequest = {}, 
     onSuccess, 
     onCancel, 
-    passLoadingStatus
+    passLoadingStatus,
 }) => {
-
     const ContextValue = React.useContext(WalletContext);
     const { wallet, loading } = ContextValue;
     const validWallet = isValidStoredWallet(wallet);
@@ -34,7 +34,6 @@ const Wallet = ({
 
     const [isFinalBalance, setFinalBalance] = useState(false);
     const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
-    const [forwardToCheckout, setForwardToCheckout] = useState(false);
 
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
     const hasPaymentRequest = 'customer_id' in paymentRequest // url trumps new request
@@ -132,6 +131,7 @@ const Wallet = ({
                 prInfo.paymentDetails.merchantDataJson = JSON.parse(prInfo.paymentDetails.merchantData.toString());
                 prInfo.paymentDetails.type = prInfo.type;
                 setPrInfoFromUrl(prInfo);
+                console.log("Wallet.js prInfo set");
             } catch (err) {
                 errorNotification(err, 
                     'Failed to fetch invoice. May be expired or invalid', 
@@ -144,46 +144,49 @@ const Wallet = ({
         } 
     }, []);
 
+
     return (
-        <>  
-            {loading || (wallet && !validWallet) ? (
-                <LoadingCtn />
-            ) : (
-                <>
-                    <Suspense fallback={<LoadingCtn />}>
-                        {(isFinalBalance && prInfoFromUrl) ? (
-                            <>
-                                {forwardToCheckout ? (
-                                    <Checkout
-                                        prInfoFromUrl={prInfoFromUrl} 
-                                        onSuccess={onSuccess}
-                                        onCancel={onCancel}
-                                        passLoadingStatus={passLoadingStatus}
-                                    />
-                                ) : (                
-                                    <SendBip70 
-                                        prInfoFromUrl={prInfoFromUrl} 
-                                        onSuccess={onSuccess}
-                                        onCancel={onCancel}
-                                        forwardToCheckout={setForwardToCheckout}
-                                        passLoadingStatus={passLoadingStatus}
-                                    />
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                {(wallet && wallet.Path1899 ) ? (
-                                    <TokenDecision passDecisionStatus={setFinalBalance} />
-                                ) : (
-                                    <Onboarding />
-                                )}
-                            </> 
-                        )}  
-                    </Suspense>
-                </>
-            )}  
-        </>
-    )
+        <Suspense fallback={<LoadingCtn />}>
+            <Switch>
+                <Route path={"/wallet/onBoarding"}>
+                    <>            
+                        {(wallet && wallet.Path1899 && !loading && validWallet ) ? (
+                            <TokenDecision />
+                        ) : ( 
+                            <Onboarding />
+                        )} 
+                    </>
+                </Route>
+                <Route path="/wallet/sendBip70">
+                    <> 
+                        {prInfoFromUrl && (
+                            <SendBip70 
+                                prInfoFromUrl={prInfoFromUrl} 
+                                onSuccess={onSuccess}
+                                onCancel={onCancel}
+                                passLoadingStatus={passLoadingStatus}
+                            />
+                        )}
+                    </>
+                </Route>
+                <Route path="/wallet/checkout">
+                    <>
+                        {prInfoFromUrl && (
+                            <Checkout 
+                                prInfoFromUrl={prInfoFromUrl} 
+                                onSuccess={onSuccess}
+                                onCancel={onCancel}
+                                passLoadingStatus={passLoadingStatus}                
+                            />                            
+                        )}
+                    </>
+                </Route>
+                <Redirect exact from="/wallet" to="/wallet/onBoarding" />
+            </Switch>
+        </Suspense>
+    );
+
+  
 };
 
 Wallet.defaultProps = {

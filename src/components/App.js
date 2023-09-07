@@ -5,12 +5,14 @@ import '../index.css';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { theme } from '@assets/styles/theme';
 const Wallet = lazy(() => import('./Wallet/Wallet'));
+
 const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
 import './App.css';
 import {
     Route,
     Switch,
+    Redirect
 } from 'react-router-dom';
 import ABC from '@assets/logo_topright.png';
 
@@ -158,11 +160,12 @@ const App = () => {
                             </HeaderCtn>
                                 <Suspense fallback={codeSplitLoader}>
                                     <Switch>
-                                        <Route path="/">
+                                        <Route path="/wallet">
                                             <Wallet 
                                                 {...window.xprops}
                                             />
                                         </Route>
+                                        <Redirect exact from="/" to="/wallet" />
                                         <Route component={NotFound} />
                                     </Switch>
                                 </Suspense>
