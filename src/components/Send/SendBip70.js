@@ -313,7 +313,7 @@ const SendBip70 = ({
 
         try {
             // Send transaction
-            const link = await sendBip70(
+            const { txidStr, link } = await sendBip70(
                 wallet,
                 paymentDetails,
                 currency.defaultFee,
@@ -334,7 +334,7 @@ const SendBip70 = ({
             }
             
             // Sleep for 3 seconds and then 
-            onSuccess(link);
+            onSuccess(txidStr, link);
             await sleep(3000);
             // Manually disable loading
             passLoadingStatus(false);

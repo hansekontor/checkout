@@ -313,7 +313,7 @@ const Checkout = ({
 
         try {
             // Send transaction
-            const link = await sendBip70(
+            const { txidStr, link } = await sendBip70(
                 wallet,
                 paymentDetails,
                 currency.defaultFee,
@@ -336,7 +336,7 @@ const Checkout = ({
             }
 
             setTokensSent(true)
-            onSuccess(link)
+            onSuccess(txidStr, link)
             await sleep(1000);
 
             passLoadingStatus(false);
@@ -764,7 +764,7 @@ Checkout.defaultProps = {
         console.log(status);
     },
     onSuccess: link => {
-        console.log("onSuccess", link);
+        console.log("onSuccess", id, link);
     },
     onCancel: status => {
         console.log("onCancel:", status);

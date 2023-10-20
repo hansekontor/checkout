@@ -893,7 +893,7 @@ export default function useBCH() {
 
         //console.log(`link`, link);
 
-        return link;
+        return { txidStr, link };
     };
 
     const readAuthCode = (authCode) => {

@@ -1,3 +1,4 @@
+require('dotenv').config();
 import React, { useEffect, useState, lazy, Suspense }  from 'react';
 import { useHistory, Redirect, Route, Switch } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -30,6 +31,8 @@ const Wallet = ({
         ...currency.tokenPrefixes
     ];
 
+    const relayUrl = process.env.RELAY_URL;
+    
     const { push } = useHistory();
 
     const [isFinalBalance, setFinalBalance] = useState(false);
@@ -75,7 +78,7 @@ const Wallet = ({
                 prQuery.return_json = true;    
                 console.log("prQuery", prQuery);
                 const data = await fetch(
-                    "https://relay2.cmpct.org/template?" + new URLSearchParams(prQuery))
+                    relayUrl + "?" + new URLSearchParams(prQuery))
                     .then(res => res.json());
                 console.log("fetch data", data);
                 prInfo.url = data.paymentUrl;
