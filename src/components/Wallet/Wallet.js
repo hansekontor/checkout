@@ -31,15 +31,13 @@ const Wallet = ({
         ...currency.tokenPrefixes
     ];
 
-    const relayUrl = process.env.RELAY_URL;
-    
     const { push } = useHistory();
 
     const [isFinalBalance, setFinalBalance] = useState(false);
     const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
 
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
-    const hasPaymentRequest = 'customer_id' in paymentRequest // url trumps new request
+    const hasPaymentRequest = 'cert_hash' in paymentRequest // url trumps new request
                     && 'amount' in paymentRequest && !hasPaymentUrl;
 
     if (!hasPaymentUrl && !hasPaymentRequest) {
@@ -63,7 +61,6 @@ const Wallet = ({
                     "success_url",
                     "cancel_url", 
                     "ipn_url",
-                    "customer_id",
                     "cert_hash", 
                     "merchant_name"
                 ];
@@ -73,14 +70,11 @@ const Wallet = ({
                     obj[key] = paymentRequest[key];
                     return obj;
                 }, {});
-                if (paymentRequest.customer_id) // api currently only takes certificates
-                    prQuery.cert_hash = prQuery.customer_id;
                 prQuery.return_json = true;    
                 console.log("prQuery", prQuery);
                 const data = await fetch(
-                    relayUrl + "?" + new URLSearchParams(prQuery))
+                    "https://relay1.cmpct.org/template" + "?" + new URLSearchParams(prQuery))
                     .then(res => res.json());
-                console.log("fetch data", data);
                 prInfo.url = data.paymentUrl;
                 prInfo.type = data.currency;
                 // catch error

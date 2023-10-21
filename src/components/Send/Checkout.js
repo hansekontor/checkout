@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
     useLocation,
     useHistory
@@ -51,6 +51,8 @@ import {
     AgreeOverlay,
     AgreeModal,
 } from "../../assets/styles/checkout.styles";
+import WertModule from '@wert-io/module-react-component';
+import { AcceptHosted, HostedForm } from 'react-acceptjs';
 
 
 const Checkout = ({ 
@@ -82,9 +84,11 @@ const Checkout = ({
     } = walletState;
     // Modal settings
     const purchaseTokenIds = [
-        '7e7dacd72dcdb14e00a03dd3aff47f019ed51a6f1f4e4f532ae50692f62bc4e5',
-        '744354f928fa48de87182c4024e2c4acbd3c34f42ce9d679f541213688e584b1',
         '4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a'
+    ];
+
+    const paymentServers = [
+        'https://pay.badger.cash/i/'
     ];
 
     const blankFormData = {
@@ -122,12 +126,101 @@ const Checkout = ({
     const [hasAgreed, setHasAgreed] = useState(false);
 
     const [tokensMinted, setTokensMinted] = useState(false);
-    const [tokensSent, setTokensSent] = useState(false);
+    // const [tokensSent, setTokensSent] = useState(false);
+    const [tokensSent, setTokensSent] = useState(null); // null or txid
+    const [paymentId, setPaymentId] = useState(null); // paymentId as stored in the BUX db
     const [purchaseTokenAmount, setPurchaseTokenAmount] = useState(0);
+
+    const calculateFiat = (purchaseTokenAmount) => {
+        const exchangeAdditionalAmount = (purchaseTokenAmount * .01).toFixed(2); // Exchange rate
+        const feeAmount = ((Number(purchaseTokenAmount) + Number(exchangeAdditionalAmount)) * .04).toFixed(2); // Add 4% fee
+        const totalAmount = (Number(purchaseTokenAmount) + Number(exchangeAdditionalAmount) + Number(feeAmount)).toFixed(2);
+        return {
+            exchangeAdditionalAmount,
+            feeAmount,
+            totalAmount
+        }
+    };
+
+    const {
+        exchangeAdditionalAmount,
+        feeAmount,
+        totalAmount
+    } = calculateFiat(purchaseTokenAmount);
+
+    const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
+    // const tokenTypeVersion = purchaseTokenIds.slice(2).includes(formData.token?.tokenId) ? 2 : 1;
+    const tokenTypeVersion = 2
 
     // Postage Protocol Check (for BURN)
     const [postageData, setPostageData] = useState(null);
     const [usePostage, setUsePostage] = useState(false);
+
+    const [uuid, setUuid] = useState(null);
+
+    const [formToken, setFormToken] = useState(null);
+
+    const divRef = useRef(null);
+
+    const buildUuid = async (purchaseTokenAmount) => {
+        if (uuid) {
+            // console.log('uuid', uuid);
+            return uuid;
+        }
+
+        let uuidHex = '01';
+        const prUrlArray = prInfoFromUrl.url.split('/');
+        const prId = prUrlArray[prUrlArray.length - 1];
+        const prUrlIndex = paymentServers.findIndex(server => server === prInfoFromUrl.url.replace(prId, ''));
+        if (prUrlIndex < 0) {
+            return errorNotification(new Error(), 
+                'Invalid payment server', 
+                `Fetching invoice: ${prInfoFromUrl.url}`
+            );
+        }
+        uuidHex += `0${prUrlIndex}${Buffer.from(prId, 'utf8').toString('hex')}`;
+        // Write amount as Big Endian buffer
+        const buf = Buffer.allocUnsafe(4);
+        buf.writeUInt32BE(purchaseTokenAmount * (10 ** 4), 0); // hardcoded for BUX. fix this
+        // console.log('base token amount uuid hex', buf.toString('hex'))
+        uuidHex += buf.toString('hex');
+        // fetch address alias
+        const aliasUrl = `https://${isSandbox ? 'dev-api.' : ''}bux.digital/v2/addressalias/${wallet.Path1899.slpAddress}`
+        const response = await fetch(aliasUrl, {
+            method: 'get',
+        });
+
+        const alias = (await response.json()).alias;
+        uuidHex += alias;
+        // add nonce
+        const genRanHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+        uuidHex += genRanHex(2);
+
+        const formattedUuid = `${uuidHex.slice(0, 8)}-${uuidHex.slice(8, 12)}-${uuidHex.slice(12, 16)}-${uuidHex.slice(16, 20)}-${uuidHex.slice(20, 32)}`
+        // console.log('formattedUuid', formattedUuid);
+        setUuid(formattedUuid);
+
+        return formattedUuid;
+    }
+
+    const fetchFormToken = async (purchaseAmount) => {
+        const tokenUrl = `https://${isSandbox ? 'dev-api.' : ''}bux.digital/v2/authpaymenttoken`;
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                usdamount: Number(calculateFiat(purchaseAmount).totalAmount),
+                buxamount: purchaseAmount,
+                address: wallet.Path1899.slpAddress,
+                prurl: prInfoFromUrl.url
+            }),
+        });
+        const token = (await response.json()).token;
+        // console.log('token', token)
+        return setFormToken(token);
+    }
 
     // const showModal = () => {
     //     setIsModalVisible(true);
@@ -177,6 +270,8 @@ const Checkout = ({
                     purchaseAmount = rounded < 1 ? 1 : rounded;
                 }
                 setPurchaseTokenAmount(purchaseAmount);
+                buildUuid(purchaseAmount);
+                fetchFormToken(purchaseAmount);
             }
         }
     }, [tokenFormattedBalance]);
@@ -241,7 +336,7 @@ const Checkout = ({
                 const totalBase = sendRecords.reduce((total, record) => {
                     return total.add(U64.fromBE(Buffer.from(record.value)));
                 }, U64.fromInt(0));
-                console.log('totalBase', totalBase);
+                // console.log('totalBase', totalBase);
 
                 const tokenInfo = await fetch(
                     `${getBcashRestUrl()}/token/${tokenIdBuf.toString('hex')}`
@@ -335,7 +430,10 @@ const Checkout = ({
                 }
             }
 
-            setTokensSent(true)
+            const linkParts = link.split('/')
+            const sentTxid = linkParts[linkParts.length - 1]
+            setTokensSent(sentTxid)
+            // setTokensSent(true)
             onSuccess(txidStr, link)
             await sleep(1000);
 
@@ -413,7 +511,8 @@ const Checkout = ({
                     authCodeB64,
                     false, // testOnly
                     doChainedMint,
-                    rawBurnTx
+                    rawBurnTx,
+                    isSandbox
                 );
             }
 
@@ -478,115 +577,132 @@ const Checkout = ({
         }
     }
 
-    const feeAmount = (.50 + (purchaseTokenAmount * .06)).toFixed(2); // Add 50 cent fixed fee to 6% percentage
-    const totalAmount = (Number(purchaseTokenAmount) + Number(feeAmount)).toFixed(2);
+    const authorizenetSuccess = async (result) => {
+        try {
+            console.log('result', result);
+            const resultCode = result.messages.resultCode
+            console.log('resultCode', resultCode)
 
-    const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
-    const tokenTypeVersion = purchaseTokenIds.slice(2).includes(formData.token?.tokenId) ? 2 : 1;
+            if (resultCode !== 'Ok') {
+                console.log(`authorize.net responseCode ${result.responseCode}`)
+                passLoadingStatus(false);
+                return;
+            }
 
-    const referenceId = tokenTypeVersion === 1 ? `${wallet.Path1899.slpAddress}-${purchaseTokenAmount}`
-        : `b70-${wallet.Path1899.slpAddress}-${prInfoFromUrl.url}`
+            passLoadingStatus('Processing payment information...');
+            const tokenUrl = `https://${isSandbox ? 'dev-api.' : ''}bux.digital/v2/authpaymenttransaction`;
+            const transResponse = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    usdamount: Number(calculateFiat(purchaseTokenAmount).totalAmount),
+                    buxamount: purchaseTokenAmount,
+                    address: wallet.Path1899.slpAddress,
+                    prurl: prInfoFromUrl.url,
+                    opaquedata: result.opaqueData,
+                    customerinformation: result.customerInformation
+                }),
+            });
+            const transId = (await transResponse.json()).transId;
+            // Call your server to save the transaction
+            passLoadingStatus('Fetching authorization code...');
+            let burnTx;
+            const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${result.transId || transId}`, {
+                method: 'get',
+                headers: {
+                    'content-type': 'application/json',
+                    // ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
+                }
+            });
 
-    const PayPalSection = () => {
-        return (
-            <>
-                <PayPalScriptProvider options={{ 
-                    "client-id": isSandbox ? 
-                    "AeFEAYVCMcWrjMQySDAJ_9K4AHvcYFA_-q9PF-axkNNU_sldsbZDCYuU8aTsNYgzPu4qNGB0IqCN1cbQ" : 
-                    "ATPjCoOQT8kYOAzUUwehyvrA7D4nyvkfyZgmSMiR5_YOe9G2UomchTEQJzdzj2QGiUXOxfYCpK17izz7" 
-                }}>
-                    <PayPalButtons 
-                        style={{ layout: "vertical" }}
-                        forceReRender={[purchaseTokenAmount]}
-                        createOrder={(data, actions) => {
-                            console.log("purchaseAmount", purchaseTokenAmount);
-                            return actions.order
-                                .create({
-                                    purchase_units: [
-                                        {
-                                            reference_id: referenceId,
-                                            description: `Self-Mint Auth Code (${purchaseTokenAmount} BUX Tokens)`,
-                            
-                                            custom_id: location.href,
-                                            amount: {
-                                                currency_code: "USD",
-                                                value: totalAmount.toString(),
-                                                breakdown: {
-                                                    item_total: {
-                                                        currency_code: "USD",
-                                                        value: totalAmount.toString()
-                                                    }
-                                                }
-                                            },
-                                            items: [
-                                                {
-                                                    name: "Auth Code",
-                                                    description: `Self-Mint Auth Code (${purchaseTokenAmount} BUX Tokens)`,
-                                                    unit_amount: {
-                                                        currency_code: "USD",
-                                                        value: totalAmount.toString()
-                                                    },
-                                                    quantity: "1"
-                                                }
-                                            ],
-                            
-                                        }
-                                    ],
-                                    application_context: {
-                                        shipping_preference: 'NO_SHIPPING'
-                                    }
-                                })
-                                .then((orderId) => {
-                                    // Your code here after create the order
-                                    return orderId;
-                                });
-                        }}
-                        onApprove={(data, actions) => {
-                            return actions.order.capture().then(async (details) => {
-                                // Your code here after capture the order
-                                passLoadingStatus('true');
-                                // Handle token/fiat split payment
-                                let burnTx;
-                                if (Number(tokenFormattedBalance) >= .01) {
-                                    passLoadingStatus('Adding existing wallet balance to payment...');
-                                    const mintVaultBatonOutput = new Output({
-                                        address: getMintVaultAddress(),
-                                        value: 5700
-                                    })
-                                    burnTx = await generateBurnTx(
-                                        wallet,
-                                        formData.token.tokenId,
-                                        [],
-                                        mintVaultBatonOutput
-                                    );
-                                }
-                                // console.log('burnTx', burnTx && burnTx.toString('hex'))
-                                passLoadingStatus('Fetching authorization code...');
-                                // Call your server to save the transaction
-                                const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${details.id}`, {
-                                    method: 'get',
-                                    headers: {
-                                        'content-type': 'application/json',
-                                        ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
-                                    }
-                                });
-
-                                const data = await response.json();
-                                doSelfMint(data.authcode, 1, burnTx);
-                            });
-                        }}
-                        onError={(err) => {
-                            console.log(err);
-                            const { type } = prInfoFromUrl;
-                            const ticker = type == 'etoken' ?
-                                currency.tokenTicker : currency.ticker;
-                            handleSendXecError(err, ticker);
-                        }}
-                    />
-                </PayPalScriptProvider>
-            </>
-        );
+            const data = await response.json();
+            setPaymentId(result.transId || transId)
+            doSelfMint(data.authcode, 1, burnTx);
+        } catch (err) {
+            console.log(err);
+            const { type } = prInfoFromUrl;
+            const ticker = type == 'etoken' ?
+                currency.tokenTicker : currency.ticker;
+            handleSendXecError(err, ticker);
+        }
     }
+
+    const wertSuccess = async (result) => {
+        try {
+            console.log('result', result);
+
+            if (result.status !== 'success') {
+                if (result.status === 'pending') {
+                    console.log('wert pending')
+                    divRef.current.scrollIntoView();
+                    // divRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                    passLoadingStatus(
+                        'Processing payment. This can take up to 60 seconds.'
+                    );
+                } else {
+                    console.log(`wert ${result.status}`)
+                    passLoadingStatus(false);
+                }
+                return;
+            }
+
+            // Your code here after capture the order
+            passLoadingStatus('true');
+            // Handle token/fiat split payment
+            let burnTx;
+            // if (Number(tokenFormattedBalance) >= .01) {
+            //     passLoadingStatus('Adding existing wallet balance to payment...');
+            //     const mintVaultBatonOutput = new Output({
+            //         address: getMintVaultAddress(isSandbox),
+            //         value: 5700
+            //     })
+            //     burnTx = await generateBurnTx(
+            //         wallet,
+            //         formData.token.tokenId,
+            //         [],
+            //         mintVaultBatonOutput
+            //     );
+            // }
+            // console.log('burnTx', burnTx && burnTx.toString('hex'))
+            // passLoadingStatus('Fetching authorization code...');
+            // // Call your server to save the transaction
+            // const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${result.order_id}`, {
+            //     method: 'get',
+            //     headers: {
+            //         'content-type': 'application/json',
+            //         ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
+            //     }
+            // });
+
+            // const data = await response.json();
+            doSelfMint(result.authcode, 1, burnTx);
+        } catch (err) {
+            console.log(err);
+            const { type } = prInfoFromUrl;
+            const ticker = type == 'etoken' ?
+                currency.tokenTicker : currency.ticker;
+            handleSendXecError(err, ticker);
+        }
+    }
+
+    const payButtonStyle = {
+        border: 'none',
+        color: 'rgb(255, 255, 255)',
+        backgroundImage: 'linear-gradient(270deg, rgb(0, 116, 194) 0%, rgb(39, 52, 152) 100%)',
+        transition: 'all 0.5s ease 0s',
+        backgroundSize: '200%',
+        fontSize: '18px',
+        width: '80%',
+        padding: '20px 0px',
+        borderRadius: '4px',
+        marginBottom: '20px',
+        cursor: 'pointer',
+    };
+
+    const payButtonText = 'PAY WITH CREDIT CARD';
+    const payFormHeaderText = `Pay $${totalAmount} - Self-mint Authorization Code (${purchaseTokenAmount} BUX)`
 
     const priceApiError = fiatPrice === null && selectedCurrency !== 'XEC';
 
@@ -613,10 +729,10 @@ const Checkout = ({
                 </p>
             </Modal>
 
-                <CheckoutHeader>
-                    <CheckoutIcon src={CheckOutIcon} />
-                    <h4>CHECKOUT</h4>
-                    <hr />             
+                <CheckoutHeader ref={divRef} tabindex="-1">
+                    {/* <CheckoutIcon src={CheckOutIcon} /> */}
+                    {/* <h4>CHECKOUT</h4> */}
+                    {/* <hr />              */}
                     {(offer_name && (
                         <>
                             <h1>{offer_name}</h1>
@@ -626,7 +742,7 @@ const Checkout = ({
 
 			<CheckoutStyles>
 				<PaymentDetails>
-					<h3 className="title">Payment Request Details:</h3>
+                    <h3 className="title">{tokensSent ? 'Receipt ' : 'Payment Request '}Details:</h3>
                     {(offer_description && (
                         <>
                             <p className="offer-description">{offer_description}</p>
@@ -643,16 +759,37 @@ const Checkout = ({
 
 				{(isStage1 && (
 					<>
-						<PurchaseAuthCode>
-							{!checkSufficientFunds() && <p className="text-muted">You have insufficient funds in this wallet</p>}
-							<ListItem className="min-m">
-								<span className="key black">Purchase an Auth Code for</span>
-								<span className="value black bold">
-									{purchaseTokenAmount} {displayTicker}
-								</span>
-							</ListItem>
-							<p className="text-muted">In order to settle this payment request</p>
-						</PurchaseAuthCode>
+                        {!tokensSent ? (
+                            <PurchaseAuthCode>
+                                {!checkSufficientFunds() && <p className="text-muted">You have insufficient funds in this wallet</p>}
+                                <ListItem className="min-m">
+                                    <span className="key black">Purchase an Auth Code for</span>
+                                    <span className="value black bold">
+                                        {purchaseTokenAmount} {displayTicker}
+                                    </span>
+                                </ListItem>
+                                <p className="text-muted">In order to settle this payment request</p>
+                            </PurchaseAuthCode>
+                        ) : (
+                            <PurchaseAuthCode>
+                                {!checkSufficientFunds() && <p className="text-muted">Payment Success!</p>}
+                                <ListItem className="min-m">
+                                    <span className="key black">You purchased and used an Auth Code for</span>
+                                    <span className="value black bold">
+                                        {purchaseTokenAmount} {displayTicker}
+                                    </span>
+                                </ListItem>
+                                <p className="text-muted">{(new Date()).toString()}</p>
+                                {paymentId && (
+                                    <p className="text-muted">BUX Order #{paymentId} </p>
+                                )}
+                                <p className="text-muted">XEC transaction ID:</p>
+                                <p className="text-muted-small">
+                                    <a target="_blank" rel="noopener noreferrer" href={`https://explorer.cert.cash/tx/${tokensSent}`}>{tokensSent}</a>
+                                </p>
+                                <p className="text-red">Please screenshot or print this receipt for your records</p>
+                            </PurchaseAuthCode>
+                        )}
 
 						<HorizontalSpacer />
 
@@ -660,16 +797,22 @@ const Checkout = ({
 
 						<ListItem>
 							<span className="key gray">Subtotal:</span>
-							<span className="value gray">${purchaseTokenAmount}</span>
+							<span className="value gray">${purchaseTokenAmount.toFixed(2)}</span>
 						</ListItem>
 
 						<ListItem>
 							<span className="key gray">Fee:</span>
-							<span className="value gray">${feeAmount}</span>
+							<span className="value gray">${(Number(exchangeAdditionalAmount) + Number(feeAmount)).toFixed(2)}</span>
 						</ListItem>
+                        {tokensSent && (
+                            <ListItem>
+                                <span className="key gray">Paid:</span>
+                                <span className="value gray">-${totalAmount}</span>
+                            </ListItem>
+                        )}
 						<ListItem>
 							<span className="key gray bold">Total:</span>
-							<span className="value gray bold">${totalAmount}</span>
+							<span className="value gray bold">${tokensSent ? 0 : totalAmount}</span>
 						</ListItem>
 					</>
 				)) || (
@@ -713,33 +856,91 @@ const Checkout = ({
                 )}
 			</CheckoutStyles>
 
-                <Form>            
-                {isStage1 ? (
-                    <>
-                        { hasAgreed && (
+            {isStage1 ? (
+                <>
+                    { hasAgreed && (
+                        <>
+                        {!tokensMinted && uuid && formToken ? 
                             <>
-                            {!tokensMinted ? 
-                                <>
-                                    <p className="text-muted">
-                                        By making this purchase you agree to the
-                                        <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a>
-                                    </p>
-                                    <PayPalSection />
-                                </>
-                                : <Spin spinning={true} indicator={CashLoadingIcon}></Spin>
-                            }
+                                <p className="text-muted">
+                                    By making this purchase you agree to the
+                                    <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a>
+                                </p>
+                                {prInfoFromUrl.paymentDetails.merchantDataJson.ipn_body?.offer_name ? (
+                                    <WertModule
+                                        style={{height: "580px"}}
+                                        options={{
+                                            partner_id: isSandbox ? '01H97V3M5ZZPVS7RXW2V2NXVN5' : '01HB6ASSZED5SH5V8KWQD1MR87' ,
+                                            origin: `https://${isSandbox ? 'sandbox' : 'widget'}.wert.io`,
+                                            click_id: uuid, // unique id of purchase in your system
+                                            currency: 'USD',
+                                            commodity: 'BUX', // name of your token in Wert system
+                                            network: isSandbox ? 'testnet' : 'mainnet', 
+                                            address: wallet.Path1899.cashAddress,
+                                            commodities: JSON.stringify([
+                                                {
+                                                commodity: 'BUX',
+                                                network: isSandbox ? 'testnet' : 'mainnet',
+                                                }, // this restricts what currencies will be available in the widget
+                                            ]),
+                                            commodity_amount: purchaseTokenAmount, // amount being minted
+                                            listeners: {
+                                                loaded: () => console.log('Wert widget loaded'),
+                                                "payment-status": (result) => wertSuccess(result)
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <>
+                                    <HostedForm 
+                                        authData={{
+                                            apiLoginID: isSandbox ? '25W2mLe5' : '469zGVDrekmC',
+                                            clientKey: isSandbox ? '8TEqfrHqLh4UWqUY8Sf3H8fq5PyczM9gqfV927Rq8Q5eFwVs2P8UYn7H8MK8Fy4T' : '74AUbX9mjmMFFBs38EG8q46dEaxNy9kC6p8rK4f33nw6yGhFn6g62vrX5d2KGAQ8'
+                                        }} 
+                                        onSubmit={authorizenetSuccess}
+                                        environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
+                                        billingAddressOptions={{show: true, required: true}}
+                                        buttonStyle={payButtonStyle}
+                                        buttonText={payButtonText}
+                                        formHeaderText={payFormHeaderText}
+                                    />
+                                    {/* <AcceptHosted
+                                        formToken={formToken}
+                                        integration="iframe"
+                                        onTransactionResponse={authorizenetSuccess}
+                                        environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
+                                    >
+                                        <AcceptHosted.Button 
+                                        style={payButtonStyle}
+                                        >
+                                            {payButtonText}}
+                                        </AcceptHosted.Button>
+                                        <AcceptHosted.IFrameBackdrop />
+                                        <AcceptHosted.IFrameContainer>
+                                            <AcceptHosted.IFrame />
+                                        </AcceptHosted.IFrameContainer>
+                                    </AcceptHosted> */}
+                                    </>
+                                )}
                             </>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        {isSending || tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
-                        /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
-                    </>
-                )}
+                            : (
+                                <>
+                                    {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
+                                    /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
+                                </>
+                            )
+                        }
+                        </>
+                    )}
+                </>
+            ) : (
+                <>
+                    {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
+                    /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
+                </>
+            )}
 
-                {apiError && <ApiError />}
-            </Form>
+            {apiError && <ApiError />}
 
             { !hasAgreed && isStage1 &&
                 <AgreeOverlay>
@@ -749,8 +950,8 @@ const Checkout = ({
                         <span className="key black">To proceed you must agree to the following:</span>
                         <p className=" first">1. The seller of the digital good in this transaction is <a target="_blank" rel="noopener noreferrer" href="https://bux.digital">Badger LLC</a></p>
                         <p>2. This purchase is for an authorization code ONLY. It is not a purchase of digital currency, credits on any third-party platform, or any other product or service</p>
-                        <p>3. This unhosted wallet, upon receiving the authorization code (after your PayPal/Credit Card payment is made), will mint and send BUX tokens to settle the payment request</p>
-                        <p>4. You have read and understand the BUX <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a></p>
+                        <p>3. This unhosted wallet, upon receiving the authorization code (after your credit card payment is made), will mint and send BUX tokens to settle the payment request</p>
+                        <p>4. You have read and understand the BUX <a target="_blank" rel="noopener noreferrer" href="https://wert.io">WERT.IO</a></p>
                         <PrimaryButton onClick={() => setHasAgreed(true)}>I Agree</PrimaryButton>
                     </AgreeModal>
                 </AgreeOverlay>

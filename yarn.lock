@@ -2478,6 +2478,20 @@
     "@webassemblyjs/wast-parser" "1.9.0"
     "@xtuc/long" "4.2.2"
 
+"@wert-io/module-react-component@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@wert-io/module-react-component/-/module-react-component-1.0.0.tgz#d9f4f92e80027bf55e7532b15d7edc2168742a4e"
+  integrity sha512-oN1/MVySO2q4cwHDS/U78yB4cTaNHRRjQfF64Psot2jxF0A1h4cVbzfjissGNFcCsJcljQga20BRY6CSLg8O7Q==
+  dependencies:
+    "@wert-io/widget-initializer" "3.1.0"
+    react "^18.1.0"
+    react-dom "^18.1.0"
+
+"@wert-io/widget-initializer@3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@wert-io/widget-initializer/-/widget-initializer-3.1.0.tgz#39e074b792f256659ba0811a987c5a014d22f0ed"
+  integrity sha512-pY5Ws0rL/lhxTAu5fEcLPPqvX9nr+aru3+/3DvypkPAuouBbbpW5xEW0lc9DcWfWsgrpudp0Cpujg5IPRtvjVw==
+
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"
@@ -3572,16 +3586,9 @@ browserslist@^4.0.0, browserslist@^4.1.1, browserslist@^4.12.0, browserslist@^4.
     node-releases "^2.0.13"
     update-browserslist-db "^1.0.11"
 
-"brq@git+https://github.com/bcoin-org/brq.git#semver:~0.1.7":
+"brq@git+https://github.com/bcoin-org/brq.git#semver:~0.1.7", brq@~0.1.7, brq@~0.1.8:
   version "0.1.8"
   resolved "git+https://github.com/bcoin-org/brq.git#534bb2c83fb366ba40ad80bc3de796a174503294"
-  dependencies:
-    bsert "~0.0.10"
-
-brq@~0.1.7, brq@~0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/brq/-/brq-0.1.8.tgz#35c68bf48e0aef19e397dcd1a1ba7a0cfb3baca2"
-  integrity sha512-6SDY1lJMKXgt5TZ6voJQMH2zV1XPWWtm203PSkx3DSg9AYNYuRfOPFSBDkNemabzgpzFW9/neR4YhTvyJml8rQ==
   dependencies:
     bsert "~0.0.10"
 
@@ -8244,14 +8251,9 @@ loader-utils@^2.0.0:
     emojis-list "^3.0.0"
     json5 "^2.1.2"
 
-"loady@git+https://github.com/chjj/loady.git#semver:~0.0.1":
+"loady@git+https://github.com/chjj/loady.git#semver:~0.0.1", loady@~0.0.1, loady@~0.0.5:
   version "0.0.5"
   resolved "git+https://github.com/chjj/loady.git#b94958b7ee061518f4b85ea6da380e7ee93222d5"
-
-loady@~0.0.1, loady@~0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/loady/-/loady-0.0.5.tgz#b17adb52d2fb7e743f107b0928ba0b591da5d881"
-  integrity sha512-uxKD2HIj042/HBx77NBcmEPsD+hxCgAtjEWlYNScuUjIsh/62Uyu39GOR68TBR68v+jqDL9zfftCWoUo4y03sQ==
 
 localforage@^1.9.0:
   version "1.10.0"
@@ -10808,6 +10810,10 @@ rc-virtual-list@^3.2.0, rc-virtual-list@^3.5.1:
     rc-resize-observer "^1.0.0"
     rc-util "^5.15.0"
 
+"react-acceptjs@git+https://github.com/badger-cash/react-acceptjs#badgerwallet":
+  version "0.4.0"
+  resolved "git+https://github.com/badger-cash/react-acceptjs#b6b56f4fc5a4eddb0ba09a34bed60f04d593991f"
+
 react-copy-to-clipboard@^5.0.3:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/react-copy-to-clipboard/-/react-copy-to-clipboard-5.1.0.tgz#09aae5ec4c62750ccb2e6421a58725eabc41255c"
@@ -10861,6 +10867,14 @@ react-dom@^17.0.1:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     scheduler "^0.20.2"
+
+react-dom@^18.1.0:
+  version "18.2.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.2.0.tgz#22aaf38708db2674ed9ada224ca4aa708d821e3d"
+  integrity sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==
+  dependencies:
+    loose-envify "^1.1.0"
+    scheduler "^0.23.0"
 
 react-easy-crop@^3.5.3:
   version "3.5.3"
@@ -10953,6 +10967,13 @@ react@^17.0.1:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+react@^18.1.0:
+  version "18.2.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-18.2.0.tgz#555bd98592883255fa00de14f1151a917b5d77d5"
+  integrity sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==
+  dependencies:
+    loose-envify "^1.1.0"
 
 read-pkg-up@^4.0.0:
   version "4.0.0"
@@ -11468,6 +11489,13 @@ scheduler@^0.20.2:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+scheduler@^0.23.0:
+  version "0.23.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.23.0.tgz#ba8041afc3d30eb206a487b6b384002e4e61fdfe"
+  integrity sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==
+  dependencies:
+    loose-envify "^1.1.0"
 
 schema-utils@^1.0.0:
   version "1.0.0"
