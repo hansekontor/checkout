@@ -5,7 +5,6 @@ import '../index.css';
 import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { theme } from '@assets/styles/theme';
 const Wallet = lazy(() => import('./Wallet/Wallet'));
-
 const NotFound = lazy(() => import('./NotFound'));
 import CashTab from '@assets/cashtab_xec.png';
 import './App.css';
@@ -15,6 +14,7 @@ import {
     Redirect
 } from 'react-router-dom';
 import ABC from '@assets/logo_topright.png';
+import { Spin } from 'antd';
 
 
 const GlobalStyle = createGlobalStyle`    
@@ -139,10 +139,16 @@ export const AbcLogo = styled.img`
 
 const App = () => {
     const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
+    const [loadingUtxosAfterSend, setLoadingUtxosAfterSend] = useState(false);
 
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
+            <Spin
+                spinning={loadingUtxosAfterSend}
+                indicator={CashLoadingIcon}
+                tip={typeof loadingUtxosAfterSend === "string" ? loadingUtxosAfterSend : ""}
+            >
                 <CustomApp>
                     <WalletBody>
                         <WalletCtn>
@@ -163,6 +169,7 @@ const App = () => {
                                         <Route path="/wallet">
                                             <Wallet 
                                                 {...window.xprops}
+                                                passLoadingStatus={setLoadingUtxosAfterSend}
                                             />
                                         </Route>
                                         <Redirect exact from="/" to="/wallet" />
@@ -172,6 +179,7 @@ const App = () => {
                         </WalletCtn>
                     </WalletBody>
                 </CustomApp>
+            </Spin>
         </ThemeProvider>
     );
 };

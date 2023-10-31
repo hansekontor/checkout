@@ -12,7 +12,6 @@ const TokenDecision = lazy(() => import('../OnBoarding/TokenDecision'));
 const Onboarding = lazy(() => import('../OnBoarding/OnBoarding'));
 import { LoadingCtn } from '@components/Common/Atoms';
 import { isValidStoredWallet } from '@utils/cashMethods';
-import OnBoarding from '../OnBoarding/OnBoarding';
 
 
 const Wallet = ({    
@@ -20,7 +19,7 @@ const Wallet = ({
     paymentRequest = {}, 
     onSuccess, 
     onCancel, 
-    passLoadingStatus,
+    passLoadingStatus
 }) => {
     const ContextValue = React.useContext(WalletContext);
     const { wallet, loading } = ContextValue;
@@ -195,9 +194,6 @@ Wallet.defaultProps = {
     onCancel: status => {
         console.log("Payment cancelled:", status);
     },
-    passLoadingStatus: status => {
-        console.log("loadingStatus:", status);
-    }
 };
 
 Wallet.propTypes = {

@@ -444,6 +444,7 @@ const Checkout = ({
             console.error(e)
             // Retry send if response is 402 or 404 (mitigates stamp/baton race conditions)
             if ((e.cause.code === 402 || e.cause.code === 404) && attempt < 3) {
+                console.log("error", e.cause);
                 const nextAttempt = attempt + 1;
                 passLoadingStatus(`Payment unsuccessful. Retrying... (${nextAttempt}/3)`);
                 await sleep(5000);
