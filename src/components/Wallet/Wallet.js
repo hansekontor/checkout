@@ -12,6 +12,7 @@ const TokenDecision = lazy(() => import('../OnBoarding/TokenDecision'));
 const Onboarding = lazy(() => import('../OnBoarding/OnBoarding'));
 import { LoadingCtn } from '@components/Common/Atoms';
 import { isValidStoredWallet } from '@utils/cashMethods';
+import { errorNotification } from '@components/Common/Notifications';
 
 
 const Wallet = ({    

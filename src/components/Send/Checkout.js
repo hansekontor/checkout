@@ -67,7 +67,6 @@ const Checkout = ({
     // If the wallet object from ContextValue has a `state key`, then check which keys are in the wallet object
     // Else set it as blank
 
-   
     const ContextValue = React.useContext(WalletContext);
     const location = useLocation();
     const { 
@@ -148,7 +147,8 @@ const Checkout = ({
         totalAmount
     } = calculateFiat(purchaseTokenAmount);
 
-    const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
+    // const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
+    const isSandbox = purchaseTokenIds.includes(formData.token?.tokenId);
     // const tokenTypeVersion = purchaseTokenIds.slice(2).includes(formData.token?.tokenId) ? 2 : 1;
     const tokenTypeVersion = 2
 
@@ -949,10 +949,17 @@ const Checkout = ({
                         <Heading>You are about to purchase a BUX Self-Mint Authorization Code</Heading>
                         <HorizontalSpacer />
                         <span className="key black">To proceed you must agree to the following:</span>
-                        <p className=" first">1. The seller of the digital good in this transaction is <a target="_blank" rel="noopener noreferrer" href="https://bux.digital">Badger LLC</a></p>
+                        <p className=" first">1. The seller of the digital good in this transaction is 
+                            <a 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                href={prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body?.offer_name ? "https://wert.io" : "https://bux.digital"}>
+                                    {prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body?.offer_name ? ' WERT.IO' : ' BADGER LLC'}
+                            </a>
+                        </p>
                         <p>2. This purchase is for an authorization code ONLY. It is not a purchase of digital currency, credits on any third-party platform, or any other product or service</p>
                         <p>3. This unhosted wallet, upon receiving the authorization code (after your credit card payment is made), will mint and send BUX tokens to settle the payment request</p>
-                        <p>4. You have read and understand the BUX <a target="_blank" rel="noopener noreferrer" href="https://wert.io">WERT.IO</a></p>
+                        <p>4. You have read and understand the BUX <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a></p>
                         <PrimaryButton onClick={() => setHasAgreed(true)}>I Agree</PrimaryButton>
                     </AgreeModal>
                 </AgreeOverlay>

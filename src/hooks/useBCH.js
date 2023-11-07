@@ -891,7 +891,7 @@ export default function useBCH() {
             link = `${currency.blockExplorerUrlTestnet}/tx/${txidStr}`;
         }
 
-        //console.log(`link`, link);
+        // console.log(`link`, link);
 
         return { txidStr, link };
     };
