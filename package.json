@@ -32,7 +32,7 @@
         "react-router": "^5.2.0",
         "react-router-dom": "^5.2.0",
         "styled-components": "^4.4.0",
-        "zoid": "9.0.87"
+        "zoid": "9.0.86"
     },
     "lint-staged": {
         "src/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [

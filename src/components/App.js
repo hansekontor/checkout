@@ -102,14 +102,14 @@ export const WalletCtn = styled.div`
     }
 `;
 
-export const HeaderCtn = styled.div`
+export const FooterCtn = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
     padding: 10px 0 0px;
     margin-bottom: 20px;
-    justify-content: flex-end;
+    justify-content: flex-start;
 
     a {
         color: ${props => props.theme.wallet.text.secondary};
@@ -152,8 +152,19 @@ const App = () => {
                 <CustomApp>
                     <WalletBody>
                         <WalletCtn>
-                            <HeaderCtn>
-                                {/*Begin component not included in extension as replaced by open in tab link*/}
+                            <Suspense fallback={codeSplitLoader}>
+                                <Switch>
+                                    <Route path="/wallet">
+                                        <Wallet 
+                                            {...window.xprops}
+                                            passLoadingStatus={setLoadingUtxosAfterSend}
+                                        />
+                                    </Route>
+                                    <Redirect exact from="/" to="/wallet" />
+                                    <Route component={NotFound} />
+                                </Switch>
+                            </Suspense>
+                            <FooterCtn>
                                 <a
                                     href="https://e.cash/"
                                     target="_blank"
@@ -162,20 +173,7 @@ const App = () => {
                                     <AbcLogo src={ABC} alt="abc" />
                                 </a>
                                 <CashTabLogo src={CashTab} alt="cashtab" />
-                                {/*Begin component not included in extension as replaced by open in tab link*/}
-                            </HeaderCtn>
-                                <Suspense fallback={codeSplitLoader}>
-                                    <Switch>
-                                        <Route path="/wallet">
-                                            <Wallet 
-                                                {...window.xprops}
-                                                passLoadingStatus={setLoadingUtxosAfterSend}
-                                            />
-                                        </Route>
-                                        <Redirect exact from="/" to="/wallet" />
-                                        <Route component={NotFound} />
-                                    </Switch>
-                                </Suspense>
+                            </FooterCtn>
                         </WalletCtn>
                     </WalletBody>
                 </CustomApp>

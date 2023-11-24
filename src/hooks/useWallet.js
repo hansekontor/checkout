@@ -15,7 +15,6 @@ import localforage from 'localforage';
 import { currency } from '@components/Common/Ticker';
 import isEqual from 'lodash.isequal';
 import {
-    xecReceivedNotification,
     eTokenReceivedNotification,
 } from '@components/Common/Notifications';
 import cashaddr from 'ecashaddrjs';
@@ -519,22 +518,22 @@ const useWallet = () => {
     };
 
     // Parse for incoming XEC transactions
-    if (
-        previousBalances &&
-        balances &&
-        'totalBalance' in previousBalances &&
-        'totalBalance' in balances &&
-        new BigNumber(balances.totalBalance)
-            .minus(previousBalances.totalBalance)
-            .gt(0)
-    ) {
-        xecReceivedNotification(
-            balances,
-            previousBalances,
-            cashtabSettings,
-            fiatPrice,
-        );
-    }
+    // if (
+    //     previousBalances &&
+    //     balances &&
+    //     'totalBalance' in previousBalances &&
+    //     'totalBalance' in balances &&
+    //     new BigNumber(balances.totalBalance)
+    //         .minus(previousBalances.totalBalance)
+    //         .gt(0)
+    // ) {
+    //     xecReceivedNotification(
+    //         balances,
+    //         previousBalances,
+    //         cashtabSettings,
+    //         fiatPrice,
+    //     );
+    // }
 
     // Parse for incoming eToken transactions
     if (

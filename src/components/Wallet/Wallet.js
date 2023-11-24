@@ -19,7 +19,8 @@ const Wallet = ({
     paymentUrl, 
     paymentRequest = {}, 
     onSuccess, 
-    onCancel, 
+    onCancel,
+    onRequest, 
     passLoadingStatus
 }) => {
     const ContextValue = React.useContext(WalletContext);
@@ -37,8 +38,9 @@ const Wallet = ({
     const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
 
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
-    const hasPaymentRequest = 'cert_hash' in paymentRequest // url trumps new request
-                    && 'amount' in paymentRequest && !hasPaymentUrl;
+    const hasPaymentRequest = !hasPaymentUrl // url trumps new request
+                    && 'cert_hash' in paymentRequest 
+                    && 'amount' in paymentRequest;
 
     if (!hasPaymentUrl && !hasPaymentRequest) {
         onCancel("Error: Invalid Properties");
@@ -52,35 +54,19 @@ const Wallet = ({
             !prInfoFromUrl
         ) {
             if (hasPaymentRequest) {            
-                const allowedParameters = [ 
-                    "invoice", 
-                    "order_key", 
-                    "amount", 
-                    "offer_name", 
-                    "offer_description", 
-                    "success_url",
-                    "cancel_url", 
-                    "ipn_url",
-                    "cert_hash", 
-                    "merchant_name"
-                ];
-                const prQuery = Object.keys(paymentRequest)
-                    .filter(key => allowedParameters.includes(key))
-                    .reduce((obj, key) => {
-                    obj[key] = paymentRequest[key];
-                    return obj;
-                }, {});
+                const prQuery = paymentRequest;
                 prQuery.return_json = true;    
                 console.log("prQuery", prQuery);
                 const data = await fetch(
                     "https://relay1.cmpct.org/template" + "?" + new URLSearchParams(prQuery))
-                    .then(res => res.json());
+                    .then(res => res.json());                
                 prInfo.url = data.paymentUrl;
                 prInfo.type = data.currency;
+                onRequest(prInfo);
                 // catch error
             } else {
                 prInfo.url = paymentUrl;
-                prInfo.type ="etoken";
+                prInfo.type ="etoken"; // todo: verify this
             }
             console.log("prInfo from props", prInfo);
         } else {
@@ -99,11 +85,6 @@ const Wallet = ({
                 const param = txInfoArr[i]
                     .slice(0, delimiterIndex)
                     .toLowerCase();
-                // // Forward to selfMint if auth code is specified
-                // if (param == 'mintauth') {
-                //     console.log('has mintauth')
-                //     return push('/selfMint');
-                // }
 
                 const encodedValue = txInfoArr[i].slice(delimiterIndex+1);
                 const value = decodeURIComponent(encodedValue);
@@ -125,10 +106,10 @@ const Wallet = ({
                     prInfo.url, 
                     prInfo.type
                 )).paymentDetails;
+                console.log("prinfo.paymentDetails", prInfo.paymentDetails)
                 prInfo.paymentDetails.merchantDataJson = JSON.parse(prInfo.paymentDetails.merchantData.toString());
                 prInfo.paymentDetails.type = prInfo.type;
                 setPrInfoFromUrl(prInfo);
-                console.log("Wallet.js prInfo set");
             } catch (err) {
                 errorNotification(err, 
                     'Failed to fetch invoice. May be expired or invalid', 
@@ -195,6 +176,9 @@ Wallet.defaultProps = {
     onCancel: status => {
         console.log("Payment cancelled:", status);
     },
+    onRequest: pr => {
+        console.log("Payment Request:", pr);
+    }
 };
 
 Wallet.propTypes = {
@@ -202,6 +186,7 @@ Wallet.propTypes = {
     paymentRequest: PropTypes.object,
     onSuccess: PropTypes.func,
     onCancel: PropTypes.func,
+    onRequest: PropTypes.func,
     passLoadingStatus: PropTypes.func
 };
 

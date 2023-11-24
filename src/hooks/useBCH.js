@@ -246,7 +246,6 @@ export default function useBCH() {
         }
         return parsedTxHistory;
     };
-
     const getTxBcash = async (txid) => {
         return fetch(`${getBcashRestUrl()}/tx/${txid}?slp=true`)
             .then(res => res.json())

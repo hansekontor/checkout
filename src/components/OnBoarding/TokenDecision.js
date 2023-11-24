@@ -11,6 +11,7 @@ import {
 	Heading,
     AgreeOverlay,
     AgreeModal,
+    HorizontalSpacer,
 } from "../../assets/styles/checkout.styles";
 import { QRCode } from '@components/Common/QRCode';
 
@@ -52,21 +53,24 @@ const TokenDecision = ({
     }
 
     return (
-        <>
+        <>            
+            <h3>
+                This is not like any other checkout. Your fiat payment initiates a crypto payment to the merchant.
+            </h3>            
+
+            <HorizontalSpacer />
+
+            <PrimaryButton onClick={() => forwardToSendBip70()}>Proceed to Checkout</PrimaryButton>
             {listenForTx ? (                
                 <>
-                    <PrimaryButton onClick={() => forwardToSendBip70()}>Proceed with current balance</PrimaryButton>
-                    <PrimaryButton onClick={() => setShowQrCode(true)}>Show QR Code again</PrimaryButton>
+                    <a onClick={() => setShowQrCode(true)}>Show QR Code again</a>
                     <p>Waiting to receive Tokens...</p>
                 </>
-
             ) : (
                 <>              
-                    <PrimaryButton onClick={() => forwardToSendBip70()}>Fiat Only Payment</PrimaryButton>
-                    <PrimaryButton onClick={() => useExistingTokens()}>Use existing Tokens in Payment</PrimaryButton>
+                    <a onClick={() => useExistingTokens()}>Use existing Tokens in Payment</a>
                 </>
             )}
-
 
             {showQrCode &&
                 <AgreeOverlay>
@@ -83,7 +87,8 @@ const TokenDecision = ({
                         <QRCode address={wallet.Path1899.slpAddress}></QRCode>
                         <PrimaryButton onClick={() => setShowQrCode(false)}>Ok</PrimaryButton>
                     </AgreeModal>
-                </AgreeOverlay>}
+                </AgreeOverlay>
+            }
         </>
     )
 };

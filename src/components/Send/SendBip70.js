@@ -12,7 +12,6 @@ import PrimaryButton, {
 } from '@components/Common/PrimaryButton';
 import useBCH from '@hooks/useBCH';
 import {
-    sendXecNotification,
     sendTokenNotification,
     errorNotification,
 } from '@components/Common/Notifications';
@@ -242,7 +241,6 @@ const SendBip70 = ({
                     return total.add(U64.fromBE(Buffer.from(record.value)));
                 }, U64.fromInt(0));
                 console.log('totalBase', totalBase);
-
                 const tokenInfo = await fetch(
                     `${getBcashRestUrl()}/token/${tokenIdBuf.toString('hex')}`
                 ).then(res => res.json());
@@ -261,7 +259,7 @@ const SendBip70 = ({
         }
     }
 
-    function handleSendXecError(errorObj, ticker) {
+    async function handleSendXecError(errorObj, ticker) {
         // Set loading to false here as well, as balance may not change depending on where error occured in try loop
         passLoadingStatus(false);
         let message;
@@ -287,7 +285,8 @@ const SendBip70 = ({
         }
 
         errorNotification(errorObj, message, `Sending ${ticker}`);
-        onCancel();
+        onCancel(message);
+        await sleep(5000)
         window.close()
     }
 
@@ -317,11 +316,8 @@ const SendBip70 = ({
                 currency.defaultFee,
                 false // testOnly
             );
-            if (type == 'ecash')
-                sendTokenNotification(link);
-            else {
-                sendXecNotification(link);
-            }
+            sendTokenNotification(link);
+
             
             // Send to success page if included in merchantDetails
             if (paymentDetails.merchantData) {
@@ -333,7 +329,7 @@ const SendBip70 = ({
             
             // Sleep for 3 seconds and then 
             onSuccess(txidStr, link);
-            await sleep(3000);
+            await sleep(5000);
             // Manually disable loading
             passLoadingStatus(false);
             // Return to main wallet screen

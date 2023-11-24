@@ -4,7 +4,6 @@ import {
     useHistory
 } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { WalletContext } from '@utils/context';
 import {
     Form,
@@ -337,7 +336,6 @@ const Checkout = ({
                     return total.add(U64.fromBE(Buffer.from(record.value)));
                 }, U64.fromInt(0));
                 // console.log('totalBase', totalBase);
-
                 const tokenInfo = await fetch(
                     `${getBcashRestUrl()}/token/${tokenIdBuf.toString('hex')}`
                 ).then(res => res.json());
@@ -356,7 +354,7 @@ const Checkout = ({
         }
     }
 
-    function handleSendXecError(errorObj, ticker) {
+    async function handleSendXecError(errorObj, ticker) {
         // Set loading to false here as well, as balance may not change depending on where error occured in try loop
         passLoadingStatus(false);
         let message;
@@ -382,7 +380,9 @@ const Checkout = ({
         }
 
         errorNotification(errorObj, message, `Sending ${ticker}`);
-        onCancel();
+        onCancel(message);
+        passLoadingStatus("An error ocurred. You will be redirected to the merchant.")
+        await sleep(5000);
         window.close()
 
     }
@@ -416,11 +416,7 @@ const Checkout = ({
                 false, // isPreburn
                 rawChainTxs
             );
-            if (type == 'ecash')
-                sendTokenNotification(link);
-            else {
-                sendXecNotification(link);
-            }
+            sendTokenNotification(link);
             
             // Send to success page if included in merchantDetails
             if (paymentDetails.merchantData) {
@@ -434,10 +430,10 @@ const Checkout = ({
             const sentTxid = linkParts[linkParts.length - 1]
             setTokensSent(sentTxid)
             // setTokensSent(true)
-            onSuccess(txidStr, link)
-            await sleep(1000);
+            onSuccess(txidStr, link)            
+            passLoadingStatus("You will be redirected to the merchant");
+            await sleep(5000);
 
-            passLoadingStatus(false);
             // Return to merchant site
             window.close();
         } catch (e) {
@@ -617,7 +613,6 @@ const Checkout = ({
                     // ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
                 }
             });
-
             const data = await response.json();
             setPaymentId(result.transId || transId)
             doSelfMint(data.authcode, 1, burnTx);
@@ -797,12 +792,12 @@ const Checkout = ({
 						<Heading>Transaction Details:</Heading>
 
 						<ListItem>
-							<span className="key gray">Subtotal:</span>
+							<span className="key gray">Auth Code Subtotal:</span>
 							<span className="value gray">${purchaseTokenAmount.toFixed(2)}</span>
 						</ListItem>
 
 						<ListItem>
-							<span className="key gray">Fee:</span>
+							<span className="key gray">Transaction Fee:</span>
 							<span className="value gray">${(Number(exchangeAdditionalAmount) + Number(feeAmount)).toFixed(2)}</span>
 						</ListItem>
                         {tokensSent && (
@@ -832,7 +827,8 @@ const Checkout = ({
 
 				<HorizontalSpacer />
                 
-                {merchant_name && (
+                {/*old solution with merchant_name and invoice on two separate lines:*/}
+                {/* {merchant_name && (
                     <>
                         <ListItem>
                             <span className="key gray">Merchant:</span>
@@ -848,10 +844,18 @@ const Checkout = ({
                             <span className="value gray">{invoice}</span>
                         </ListItem>                    
                     </>
-                )}
+                )} */}
 
 				{(merchant_name || invoice) && (
                     <>
+                        <ListItem>
+                            {merchant_name && (
+                                <span className="value gray">{merchant_name}</span>
+                            )}
+                            {invoice && (
+                                <span className="value gray">Inv. {invoice}</span>
+                            )}
+                        </ListItem>
                         <HorizontalSpacer />                    
                     </>
                 )}
