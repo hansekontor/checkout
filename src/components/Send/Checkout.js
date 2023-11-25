@@ -235,6 +235,9 @@ const Checkout = ({
         setIsModalVisible(false);
     };
 
+    const handleReturnToMerchant = () => {
+        window.close();
+    }
     const sleep = (ms) => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -431,11 +434,11 @@ const Checkout = ({
             setTokensSent(sentTxid)
             // setTokensSent(true)
             onSuccess(txidStr, link)            
-            passLoadingStatus("You will be redirected to the merchant");
-            await sleep(5000);
-
+            passLoadingStatus("Payment successful. Please screenshot the receipt.");
+            await sleep(3000);
+            passLoadingStatus(false);
             // Return to merchant site
-            window.close();
+            // window.close();
         } catch (e) {
             console.error(e)
             // Retry send if response is 402 or 404 (mitigates stamp/baton race conditions)
@@ -942,7 +945,12 @@ const Checkout = ({
                 <>
                     {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
                     /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
+
+
                 </>
+            )}
+            {tokensSent && (
+                <PrimaryButton onClick={() => handleReturnToMerchant()}>Return to Merchant</PrimaryButton>
             )}
 
             {apiError && <ApiError />}

@@ -327,12 +327,11 @@ const SendBip70 = ({
                 }
             }
             
-            // Sleep for 3 seconds and then 
             onSuccess(txidStr, link);
-            await sleep(5000);
-            // Manually disable loading
+            await sleep(3000);
             passLoadingStatus(false);
-            // Return to main wallet screen
+
+            // Return to merchant
             window.close();
         } catch (e) {
             const ticker = type == 'etoken' ?
