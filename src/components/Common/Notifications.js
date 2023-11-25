@@ -25,20 +25,6 @@ const sendXecNotification = link => {
     });
 };
 
-const createTokenNotification = link => {
-    notification.success({
-        message: 'Success',
-        description: (
-            <a href={link} target="_blank" rel="noopener noreferrer">
-                <Paragraph>
-                    Token created! Click to view in block explorer.
-                </Paragraph>
-            </a>
-        ),
-        icon: <TokenReceivedNotificationIcon />,
-        style: { width: '100%' },
-    });
-};
 
 const selfMintTokenNotification = () => {
     notification.success({
@@ -48,17 +34,7 @@ const selfMintTokenNotification = () => {
                 Tokens successfully minted! Please wait while balance is refreshed.
             </Paragraph>
         ),
-        icon: <TokenReceivedNotificationIcon />,
-        style: { width: '100%' },
-    });
-};
-
-const tokenIconSubmitSuccess = () => {
-    notification.success({
-        message: 'Success',
-        description: (
-            <Paragraph>Your eToken icon was successfully submitted.</Paragraph>
-        ),
+        duration: currency.notificationDurationLong,
         icon: <TokenReceivedNotificationIcon />,
         style: { width: '100%' },
     });
@@ -74,7 +50,7 @@ const sendTokenNotification = link => {
                 </Paragraph>
             </a>
         ),
-        duration: currency.notificationDurationShort,
+        duration: currency.notificationDurationLong,
         icon: <TokenReceivedNotificationIcon />,
         style: { width: '100%' },
     });
@@ -148,23 +124,10 @@ const errorNotification = (error, message, stringDescribingCallEvent) => {
     });
 };
 
-const messageSignedNotification = msgSignature => {
-    notification.success({
-        message: 'Message Signature Generated',
-        description: <Paragraph>{msgSignature}</Paragraph>,
-        icon: <MessageSignedNotificationIcon />,
-        style: { width: '100%' },
-    });
-};
 
 export {
-    sendXecNotification,
-    createTokenNotification,
-    tokenIconSubmitSuccess,
     sendTokenNotification,
     selfMintTokenNotification,
-    xecReceivedNotification,
     eTokenReceivedNotification,
     errorNotification,
-    messageSignedNotification,
 };

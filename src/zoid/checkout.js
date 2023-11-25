@@ -1,13 +1,14 @@
 import * as zoid from 'zoid/dist/zoid.frameworks';
 
-let CheckoutZoidComponent = zoid.create({
+// 420px is minimum width to properly show WertModule
+let Checkout = zoid.create({
     tag: 'zoid-checkout',
     url: 'http://localhost:3000/#/',
     dimensions: {
-        width: "500px",
-        height: "750px",
+        width: "420px", 
+        height: "600px",
     },
     defaultContext: "popup"
 });
 
-export default CheckoutZoidComponent;
+export default Checkout;

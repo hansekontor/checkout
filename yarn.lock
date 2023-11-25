@@ -2478,6 +2478,20 @@
     "@webassemblyjs/wast-parser" "1.9.0"
     "@xtuc/long" "4.2.2"
 
+"@wert-io/module-react-component@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@wert-io/module-react-component/-/module-react-component-1.0.0.tgz#d9f4f92e80027bf55e7532b15d7edc2168742a4e"
+  integrity sha512-oN1/MVySO2q4cwHDS/U78yB4cTaNHRRjQfF64Psot2jxF0A1h4cVbzfjissGNFcCsJcljQga20BRY6CSLg8O7Q==
+  dependencies:
+    "@wert-io/widget-initializer" "3.1.0"
+    react "^18.1.0"
+    react-dom "^18.1.0"
+
+"@wert-io/widget-initializer@3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@wert-io/widget-initializer/-/widget-initializer-3.1.0.tgz#39e074b792f256659ba0811a987c5a014d22f0ed"
+  integrity sha512-pY5Ws0rL/lhxTAu5fEcLPPqvX9nr+aru3+/3DvypkPAuouBbbpW5xEW0lc9DcWfWsgrpudp0Cpujg5IPRtvjVw==
+
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"
@@ -3673,14 +3687,9 @@ buffer@^4.3.0:
     ieee754 "^1.1.4"
     isarray "^1.0.0"
 
-"bufio@git+https://github.com/bcoin-org/bufio.git#semver:~1.0.6":
+"bufio@git+https://github.com/bcoin-org/bufio.git#semver:~1.0.6", bufio@~1.0.6:
   version "1.0.7"
   resolved "git+https://github.com/bcoin-org/bufio.git#91ae6c93899ff9fad7d7cee9afd2a1c4933ca984"
-
-bufio@~1.0.6:
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/bufio/-/bufio-1.0.7.tgz#b7f63a1369a0829ed64cc14edf0573b3e382a33e"
-  integrity sha512-bd1dDQhiC+bEbEfg56IdBv7faWa6OipMs/AFFFvtFnB3wAYjlwQpQRZ0pm6ZkgtfL0pILRXhKxOiQj6UzoMR7A==
 
 builtin-status-codes@^3.0.0:
   version "3.0.0"
@@ -10796,6 +10805,10 @@ rc-virtual-list@^3.2.0, rc-virtual-list@^3.5.1:
     rc-resize-observer "^1.0.0"
     rc-util "^5.15.0"
 
+"react-acceptjs@git+https://github.com/badger-cash/react-acceptjs#badgerwallet":
+  version "0.4.0"
+  resolved "git+https://github.com/badger-cash/react-acceptjs#b6b56f4fc5a4eddb0ba09a34bed60f04d593991f"
+
 react-copy-to-clipboard@^5.0.3:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/react-copy-to-clipboard/-/react-copy-to-clipboard-5.1.0.tgz#09aae5ec4c62750ccb2e6421a58725eabc41255c"
@@ -10849,6 +10862,14 @@ react-dom@^17.0.1:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
     scheduler "^0.20.2"
+
+react-dom@^18.1.0:
+  version "18.2.0"
+  resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-18.2.0.tgz#22aaf38708db2674ed9ada224ca4aa708d821e3d"
+  integrity sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==
+  dependencies:
+    loose-envify "^1.1.0"
+    scheduler "^0.23.0"
 
 react-easy-crop@^3.5.3:
   version "3.5.3"
@@ -10941,6 +10962,13 @@ react@^17.0.1:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+react@^18.1.0:
+  version "18.2.0"
+  resolved "https://registry.yarnpkg.com/react/-/react-18.2.0.tgz#555bd98592883255fa00de14f1151a917b5d77d5"
+  integrity sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==
+  dependencies:
+    loose-envify "^1.1.0"
 
 read-pkg-up@^4.0.0:
   version "4.0.0"
@@ -11456,6 +11484,13 @@ scheduler@^0.20.2:
   dependencies:
     loose-envify "^1.1.0"
     object-assign "^4.1.1"
+
+scheduler@^0.23.0:
+  version "0.23.0"
+  resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.23.0.tgz#ba8041afc3d30eb206a487b6b384002e4e61fdfe"
+  integrity sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==
+  dependencies:
+    loose-envify "^1.1.0"
 
 schema-utils@^1.0.0:
   version "1.0.0"
@@ -13548,7 +13583,7 @@ zalgo-promise@^1, zalgo-promise@^1.0.11, zalgo-promise@^1.0.3, zalgo-promise@^1.
   resolved "https://registry.yarnpkg.com/zalgo-promise/-/zalgo-promise-1.0.48.tgz#9e33eef502d5ed9f5a09fc5728c833c3e87afa2e"
   integrity sha512-LLHANmdm53+MucY9aOFIggzYtUdkSBFxUsy4glTTQYNyK6B3uCPWTbfiGvSrEvLojw0mSzyFJ1/RRLv+QMNdzQ==
 
-zoid@^9.0.86:
+zoid@9.0.86:
   version "9.0.86"
   resolved "https://registry.yarnpkg.com/zoid/-/zoid-9.0.86.tgz#0f18ba8841e57bfac97a83b9afe158e1eca5cc12"
   integrity sha512-hWcLj0s4cHKErUUn0Nz2bvuCStA9/y3sz/0gFxvAhompu9v54i+Pik0Kx39pWPB8qbiEN7MRyHohv1ZERlHeSg==

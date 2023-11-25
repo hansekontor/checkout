@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    useHistory
-} from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import { Bip70AddressSingle } from '@components/Common/EnhancedInputs';
@@ -14,7 +12,6 @@ import PrimaryButton, {
 } from '@components/Common/PrimaryButton';
 import useBCH from '@hooks/useBCH';
 import {
-    sendXecNotification,
     sendTokenNotification,
     errorNotification,
 } from '@components/Common/Notifications';
@@ -55,7 +52,6 @@ const SendBip70 = ({
     prInfoFromUrl,
     onSuccess, 
     onCancel, 
-    forwardToCheckout, 
     passLoadingStatus
  }) => {
     // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
@@ -72,8 +68,6 @@ const SendBip70 = ({
     } = walletState;
     // Modal settings
     const purchaseTokenIds = [
-        '7e7dacd72dcdb14e00a03dd3aff47f019ed51a6f1f4e4f532ae50692f62bc4e5',
-        '744354f928fa48de87182c4024e2c4acbd3c34f42ce9d679f541213688e584b1',
         '4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a'
     ];
 
@@ -111,6 +105,8 @@ const SendBip70 = ({
     // Postage Protocol Check (for BURN)
     const [postageData, setPostageData] = useState(null);
     const [usePostage, setUsePostage] = useState(false);
+
+    const history = useHistory();
 
     const showModal = () => {
         setIsModalVisible(true);
@@ -167,7 +163,7 @@ const SendBip70 = ({
                 .toFixed(formData.token.decimals);
             if (purchaseTokenIds.includes(formData.token?.tokenId)) {
                 if (difference < 0 && formData.address != '**BURN**') 
-                    forwardToCheckout(true);
+                    history.push("/wallet/checkout");
                     return;
             }
         }
@@ -211,7 +207,7 @@ const SendBip70 = ({
                             .toFixed(formData.token.decimals);
                         if (purchaseTokenIds.includes(formData.token?.tokenId)) {
                             if (difference < 0) 
-                                forwardToCheckout(true);
+                                history.push("/wallet/checkout");
                                 return;
                         }
                     }
@@ -245,7 +241,6 @@ const SendBip70 = ({
                     return total.add(U64.fromBE(Buffer.from(record.value)));
                 }, U64.fromInt(0));
                 console.log('totalBase', totalBase);
-
                 const tokenInfo = await fetch(
                     `${getBcashRestUrl()}/token/${tokenIdBuf.toString('hex')}`
                 ).then(res => res.json());
@@ -264,7 +259,7 @@ const SendBip70 = ({
         }
     }
 
-    function handleSendXecError(errorObj, ticker) {
+    async function handleSendXecError(errorObj, ticker) {
         // Set loading to false here as well, as balance may not change depending on where error occured in try loop
         passLoadingStatus(false);
         let message;
@@ -290,7 +285,8 @@ const SendBip70 = ({
         }
 
         errorNotification(errorObj, message, `Sending ${ticker}`);
-        onCancel();
+        onCancel(message);
+        await sleep(5000)
         window.close()
     }
 
@@ -314,17 +310,14 @@ const SendBip70 = ({
 
         try {
             // Send transaction
-            const link = await sendBip70(
+            const { txidStr, link } = await sendBip70(
                 wallet,
                 paymentDetails,
                 currency.defaultFee,
                 false // testOnly
             );
-            if (type == 'ecash')
-                sendTokenNotification(link);
-            else {
-                sendXecNotification(link);
-            }
+            sendTokenNotification(link);
+
             
             // Send to success page if included in merchantDetails
             if (paymentDetails.merchantData) {
@@ -334,12 +327,11 @@ const SendBip70 = ({
                 }
             }
             
-            // Sleep for 3 seconds and then 
-            onSuccess(link);
+            onSuccess(txidStr, link);
             await sleep(3000);
-            // Manually disable loading
             passLoadingStatus(false);
-            // Return to main wallet screen
+
+            // Return to merchant
             window.close();
         } catch (e) {
             const ticker = type == 'etoken' ?
@@ -433,9 +425,9 @@ const SendBip70 = ({
             </Modal>
 
 			<CheckoutHeader>
-				<CheckoutIcon src={CheckOutIcon} />
-				<h4>CHECKOUT</h4>
-				<hr />
+				{/* <CheckoutIcon src={CheckOutIcon} />
+				<h4>CHECKOUT</h4> */}
+				{/* <hr /> */}
                 {(offer_name && (
                     <>
 				        <h1>{offer_name}</h1>
