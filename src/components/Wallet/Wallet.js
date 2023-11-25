@@ -37,6 +37,15 @@ const Wallet = ({
     const [isFinalBalance, setFinalBalance] = useState(false);
     const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
 
+    paymentRequest = {
+        cert_hash: "0b483fd5a687c619549f0c33ce6b9ab94034bb1b8d428d45f40eec34594b6242",
+        amount: 4,
+        merchant_name: "Example Name",
+        invoice: "q34fwq",
+        offer_name: "Offer Name", // if there Wert, if not WorldPay
+        offer_description: "Offer Description", // if not there, paymentMemo is shown instead (based on merchant_name and invoice)
+    }
+
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
     const hasPaymentRequest = !hasPaymentUrl // url trumps new request
                     && 'cert_hash' in paymentRequest 
