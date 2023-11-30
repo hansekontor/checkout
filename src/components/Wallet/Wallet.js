@@ -42,9 +42,9 @@ const Wallet = ({
                     && 'cert_hash' in paymentRequest 
                     && 'amount' in paymentRequest;
 
-    if (!hasPaymentUrl && !hasPaymentRequest) {
-        onCancel("Error: Invalid Properties");
-    }
+    const sleep = (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    } 
 
     useEffect(async() => {
         const prInfo = {};
@@ -64,40 +64,47 @@ const Wallet = ({
                 prInfo.type = data.currency;
                 onRequest(prInfo);
                 // catch error
-            } else {
+            } else if (hasPaymentUrl) {
                 prInfo.url = paymentUrl;
                 prInfo.type ="etoken"; // todo: verify this
-            }
-            console.log("prInfo from props", prInfo);
-        } else {
+            } else {
+                const fullQueryString = window.location.search == '' ? 
+                    window.location.hash : window.location.search;
 
-            const fullQueryString = window.location.search == '' ? 
-                window.location.hash : window.location.search;
+                const delimiterIndex = fullQueryString.indexOf('?');
+                const txInfoArr = fullQueryString
+                    .slice(delimiterIndex+1)
+                    .split('&');
 
-            const delimiterIndex = fullQueryString.indexOf('?');
-            const txInfoArr = fullQueryString
-                .slice(delimiterIndex+1)
-                .split('&');
+                // Iterate over this to create object
+                for (let i = 0; i < txInfoArr.length; i += 1) {
+                    const delimiterIndex = txInfoArr[i].indexOf('=');
+                    const param = txInfoArr[i]
+                        .slice(0, delimiterIndex)
+                        .toLowerCase();
 
-            // Iterate over this to create object
-            for (let i = 0; i < txInfoArr.length; i += 1) {
-                const delimiterIndex = txInfoArr[i].indexOf('=');
-                const param = txInfoArr[i]
-                    .slice(0, delimiterIndex)
-                    .toLowerCase();
-
-                const encodedValue = txInfoArr[i].slice(delimiterIndex+1);
-                const value = decodeURIComponent(encodedValue);
-                const prefix = value.split(':')[0];
-                if (param === 'uri' && prefixesArray.includes(prefix)) {
-                    const queryString = value.split('?')[1];
-                    const url = getUrlFromQueryString(queryString);
-                    if (url) {
-                        prInfo.url = url;
-                        prInfo.type = "etoken";
+                    const encodedValue = txInfoArr[i].slice(delimiterIndex+1);
+                    const value = decodeURIComponent(encodedValue);
+                    const prefix = value.split(':')[0];
+                    if (param === 'uri' && prefixesArray.includes(prefix)) {
+                        const queryString = value.split('?')[1];
+                        const url = getUrlFromQueryString(queryString);
+                        if (url) {
+                            prInfo.url = url;
+                            prInfo.type = "etoken";
+                        }
                     }
                 }
+
             }
+            console.log("prInfo from props", prInfo);
+        }
+
+        if (!prInfo.url) {
+            onCancel("Error: Invalid Properties");
+            passLoadingStatus("Invalid Properties");
+            await sleep(5000);
+            window.close();
         }
 
         if (prInfo.url && prInfo.type && !prInfoFromUrl) {
@@ -121,7 +128,7 @@ const Wallet = ({
             }
         } 
     }, []);
-
+ 
 
     return (
         <Suspense fallback={<LoadingCtn />}>
@@ -170,7 +177,7 @@ const Wallet = ({
 Wallet.defaultProps = {
     paymentUrl: "",
     paymentRequest: {},
-    onSuccess: link => {
+    onSuccess: (hash, link) => {
         console.log("Payment successful:", link);
     },
     onCancel: status => {
