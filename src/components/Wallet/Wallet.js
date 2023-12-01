@@ -62,7 +62,7 @@ const Wallet = ({
                     .then(res => res.json());                
                 prInfo.url = data.paymentUrl;
                 prInfo.type = data.currency;
-                onRequest(prInfo);
+                onRequest(data);
                 // catch error
             } else if (hasPaymentUrl) {
                 prInfo.url = paymentUrl;
