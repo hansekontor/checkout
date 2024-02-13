@@ -1,6 +1,6 @@
 require('dotenv').config();
 import React, { useEffect, useState, lazy, Suspense }  from 'react';
-import { useHistory, Redirect, Route, Switch } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import { currency } from '@components/Common/Ticker.js';
@@ -8,21 +8,22 @@ import { getUrlFromQueryString } from '@utils/bip70';
 import { getPaymentRequest } from '../../utils/bip70';
 const Checkout = lazy(() => import('../Send/Checkout'));
 const SendBip70 = lazy(() => import('../Send/SendBip70'));
-const TokenDecision = lazy(() => import('../OnBoarding/TokenDecision'));
+const LandingPage = lazy(() => import('../OnBoarding/LandingPage'));
 const Onboarding = lazy(() => import('../OnBoarding/OnBoarding'));
+const Receipt = lazy(() => import('../Send/Receipt'));
 import { LoadingCtn } from '@components/Common/Atoms';
 import { isValidStoredWallet } from '@utils/cashMethods';
 import { errorNotification } from '@components/Common/Notifications';
+import { CashLoadingIcon, LoadingBlock } from '@components/Common/CustomIcons';
 
 
 const Wallet = ({    
     paymentUrl, 
-    paymentRequest = {}, 
     onSuccess, 
     onCancel,
-    onRequest, 
     passLoadingStatus
 }) => {
+    const codeSplitLoader = <LoadingBlock>{CashLoadingIcon}</LoadingBlock>;
     const ContextValue = React.useContext(WalletContext);
     const { wallet, loading } = ContextValue;
     const validWallet = isValidStoredWallet(wallet);
@@ -32,15 +33,10 @@ const Wallet = ({
         ...currency.tokenPrefixes
     ];
 
-    const { push } = useHistory();
-
-    const [isFinalBalance, setFinalBalance] = useState(false);
     const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
+    const [receiptDetails, setReceiptDetails] = useState(false);
 
     const hasPaymentUrl = paymentUrl.length === 31 && paymentUrl.startsWith("https://pay.badger.cash/i/");
-    const hasPaymentRequest = !hasPaymentUrl // url trumps new request
-                    && 'cert_hash' in paymentRequest 
-                    && 'amount' in paymentRequest;
 
     const sleep = (ms) => {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -50,21 +46,9 @@ const Wallet = ({
         const prInfo = {};
         if (
             hasPaymentUrl ||
-            hasPaymentRequest ||
             !prInfoFromUrl
         ) {
-            if (hasPaymentRequest) {            
-                const prQuery = paymentRequest;
-                prQuery.return_json = true;    
-                console.log("prQuery", prQuery);
-                const data = await fetch(
-                    "https://relay1.cmpct.org/template" + "?" + new URLSearchParams(prQuery))
-                    .then(res => res.json());                
-                prInfo.url = data.paymentUrl;
-                prInfo.type = data.currency;
-                onRequest(data);
-                // catch error
-            } else if (hasPaymentUrl) {
+        if (hasPaymentUrl) {
                 prInfo.url = paymentUrl;
                 prInfo.type ="etoken"; // todo: verify this
             } else {
@@ -131,12 +115,12 @@ const Wallet = ({
  
 
     return (
-        <Suspense fallback={<LoadingCtn />}>
+        <Suspense fallback={codeSplitLoader}>
             <Switch>
                 <Route path={"/wallet/onBoarding"}>
                     <>            
                         {(wallet && wallet.Path1899 && !loading && validWallet ) ? (
-                            <TokenDecision />
+                            <LandingPage />
                         ) : ( 
                             <Onboarding />
                         )} 
@@ -149,6 +133,7 @@ const Wallet = ({
                                 prInfoFromUrl={prInfoFromUrl} 
                                 onSuccess={onSuccess}
                                 onCancel={onCancel}
+                                passReceipt={setReceiptDetails}
                                 passLoadingStatus={passLoadingStatus}
                             />
                         )}
@@ -161,8 +146,18 @@ const Wallet = ({
                                 prInfoFromUrl={prInfoFromUrl} 
                                 onSuccess={onSuccess}
                                 onCancel={onCancel}
+                                passReceipt={setReceiptDetails}
                                 passLoadingStatus={passLoadingStatus}                
                             />                            
+                        )}
+                    </>
+                </Route>
+                <Route path="/wallet/receipt">
+                    <>
+                        {receiptDetails && (
+                            <Receipt 
+                                receiptDetails={receiptDetails}
+                            />
                         )}
                     </>
                 </Route>
@@ -178,22 +173,18 @@ Wallet.defaultProps = {
     paymentUrl: "",
     paymentRequest: {},
     onSuccess: (hash, link) => {
-        console.log("Payment successful:", link);
+        console.log("Payment successful", hash)
+        console.log("Explorer view:", link);
     },
     onCancel: status => {
         console.log("Payment cancelled:", status);
     },
-    onRequest: pr => {
-        console.log("Payment Request:", pr);
-    }
 };
 
 Wallet.propTypes = {
     paymentUrl: PropTypes.string,
-    paymentRequest: PropTypes.object,
     onSuccess: PropTypes.func,
     onCancel: PropTypes.func,
-    onRequest: PropTypes.func,
     passLoadingStatus: PropTypes.func
 };
 

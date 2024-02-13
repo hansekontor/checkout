@@ -988,6 +988,7 @@ export default function useBCH() {
         rawBurnTx,
         isSandbox = false
     ) => {
+        console.log("sendSelfMintV2() called")
         try {
             // Process entered Auth Code string
             const {

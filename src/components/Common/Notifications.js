@@ -1,42 +1,23 @@
 import * as React from 'react';
 import { notification } from 'antd';
 import {
-    CashReceivedNotificationIcon,
     TokenReceivedNotificationIcon,
 } from '@components/Common/CustomIcons';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { currency } from '@components/Common/Ticker';
-import { MessageSignedNotificationIcon } from '@components/Common/CustomIcons';
 
 // Success Notifications:
-const sendXecNotification = link => {
-    notification.success({
-        message: 'Success',
-        description: (
-            <a href={link} target="_blank" rel="noopener noreferrer">
-                <Paragraph>
-                    Transaction successful. Click to view in block explorer.
-                </Paragraph>
-            </a>
-        ),
-        duration: currency.notificationDurationShort,
-        icon: <CashReceivedNotificationIcon />,
-        style: { width: '100%' },
-    });
-};
-
 
 const selfMintTokenNotification = () => {
     notification.success({
         message: 'Success',
         description: (
             <Paragraph>
-                Tokens successfully minted! Please wait while balance is refreshed.
+                Tokens successfully minted!
             </Paragraph>
         ),
         duration: currency.notificationDurationLong,
-        icon: <TokenReceivedNotificationIcon />,
-        style: { width: '100%' },
+        style: { borderRadius: '0px' },
     });
 };
 
@@ -46,51 +27,12 @@ const sendTokenNotification = link => {
         description: (
             <a href={link} target="_blank" rel="noopener noreferrer">
                 <Paragraph>
-                    Transaction successful. Click to view in block explorer.
+                    Transaction successful!
                 </Paragraph>
             </a>
         ),
         duration: currency.notificationDurationLong,
-        icon: <TokenReceivedNotificationIcon />,
-        style: { width: '100%' },
-    });
-};
-
-const xecReceivedNotification = (
-    balances,
-    previousBalances,
-    cashtabSettings,
-    fiatPrice,
-) => {
-    notification.success({
-        message: 'Transaction received',
-        description: (
-            <Paragraph>
-                +{' '}
-                {parseFloat(
-                    Number(
-                        balances.totalBalance - previousBalances.totalBalance,
-                    ).toFixed(currency.cashDecimals),
-                ).toLocaleString()}{' '}
-                {currency.ticker}{' '}
-                {cashtabSettings &&
-                    cashtabSettings.fiatCurrency &&
-                    `(${
-                        currency.fiatCurrencies[cashtabSettings.fiatCurrency]
-                            .symbol
-                    }${(
-                        Number(
-                            balances.totalBalance -
-                                previousBalances.totalBalance,
-                        ) * fiatPrice
-                    ).toFixed(
-                        currency.cashDecimals,
-                    )} ${cashtabSettings.fiatCurrency.toUpperCase()})`}
-            </Paragraph>
-        ),
-        duration: currency.notificationDurationShort,
-        icon: <CashReceivedNotificationIcon />,
-        style: { width: '100%' },
+        style: { borderRadius: '0px' },
     });
 };
 
@@ -108,8 +50,7 @@ const eTokenReceivedNotification = (
             </Paragraph>
         ),
         duration: currency.notificationDurationShort,
-        icon: <TokenReceivedNotificationIcon />,
-        style: { width: '100%' },
+        style: { width: '100%', borderRadius: '0px' },
     });
 };
 
@@ -121,6 +62,7 @@ const errorNotification = (error, message, stringDescribingCallEvent) => {
         message: 'Error',
         description: message,
         duration: currency.notificationDurationLong,
+        style: { borderRadius: '0px' },
     });
 };
 

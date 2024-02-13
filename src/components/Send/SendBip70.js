@@ -7,9 +7,6 @@ import {
     Form,
     Modal
 } from 'antd';
-import PrimaryButton, {
-    SecondaryButton,
-} from '@components/Common/PrimaryButton';
 import useBCH from '@hooks/useBCH';
 import {
     sendTokenNotification,
@@ -22,7 +19,7 @@ import { Event } from '@utils/GoogleAnalytics';
 import {
     ConvertAmount,
     AlertMsg,
-} from '@components/Common/Atoms';
+} from '@components/Common/Atoms'; // unused
 import { 
     getWalletState,
     fromSmallestDenomination
@@ -36,29 +33,40 @@ import {
 } from '@hansekontor/checkout-components';
 const { SLP } = script;
 import { U64 } from 'n64';
-import CheckOutIcon from "@assets/checkout_icon.svg";
 import {
-	CheckoutHeader,
-	CheckoutStyles,
-	PaymentDetails,
-	PurchaseAuthCode,
-	ListItem,
-	CheckoutIcon,
-	HorizontalSpacer,
+    AuthCodeCtn, AuthCode,
+    AuthCodeTextCtn, AuthCodeText, InfoIcon, 
+    AuthCodeDescription, 
+    Offer, OfferHeader, OfferName, OfferDescription,
+    Fee, FeeLabel, FeeAmount, 
+    TooltipLine, TooltipExpand, 
+    Invoice, 
+    Support
 } from "../../assets/styles/checkout.styles";
-
+import { InfoCircleOutlined } from '@ant-design/icons';
+import { 
+    Merchant, MerchantName, MerchantTag, MerchantIcon
+} from '@components/Common/ContentHeader';
+import styled from 'styled-components';
+import ProgressDots from '@components/Common/ProgressDots';
+import MerchantSvg from '@assets/merchant_icon.svg';
+import PrimaryButton from '@components/Common/PrimaryButton';
+const Balance = styled(Fee)``;
+const BalanceLabel = styled(FeeLabel)``;
+const BalanceAmount = styled(FeeAmount)``;
+const Divider = styled.div`
+    height: 1px;
+    width: 85%;
+    background-color: #000000;
+`;
 
 const SendBip70 = ({                                     
     prInfoFromUrl,
     onSuccess, 
     onCancel, 
+    passReceipt, 
     passLoadingStatus
  }) => {
-    // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
-    // this handles edge case of user with old wallet who has not opened latest Cashtab version yet
-
-    // If the wallet object from ContextValue has a `state key`, then check which keys are in the wallet object
-    // Else set it as blank
     const ContextValue = React.useContext(WalletContext);
     const { wallet, fiatPrice, apiError, cashtabSettings } = ContextValue;
     const walletState = getWalletState(wallet);
@@ -91,9 +99,9 @@ const SendBip70 = ({
             tokenFormattedBalance = '0';
         }
     }
-    const [sendBchAddressError, setSendBchAddressError] = useState(false);
-    const [sendBchAmountError, setSendBchAmountError] = useState(false);
-    const [selectedCurrency, setSelectedCurrency] = useState(currency.ticker);
+    const [sendBchAddressError, setSendBchAddressError] = useState(false); // unused
+    const [sendBchAmountError, setSendBchAmountError] = useState(false); // unused
+    const [selectedCurrency, setSelectedCurrency] = useState(currency.ticker); // unused
 
     // Show a confirmation modal on transactions created by populating form from web page button
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -102,9 +110,12 @@ const SendBip70 = ({
     const [isPurchaseModalVisible, setIsPurchaseModalVisible] = useState(false);
     const [purchaseTokenAmount, setPurchaseTokenAmount] = useState(0);
 
+    const [showHowitworks, setShowHowitworks] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
+
     // Postage Protocol Check (for BURN)
-    const [postageData, setPostageData] = useState(null);
-    const [usePostage, setUsePostage] = useState(false);
+    const [postageData, setPostageData] = useState(null); // unused
+    const [usePostage, setUsePostage] = useState(false); // unused
 
     const history = useHistory();
 
@@ -123,21 +134,14 @@ const SendBip70 = ({
 
     const handlePurchaseOk = () => {
         setIsPurchaseModalVisible(false);
-        // Remove anchor hash from url
-        const callbackUrl = window.location.href.replace(
-            window.location.hash,
-            ''
-        );
-        return window.location.assign(
-            `https://bux.digital/?cbxamount=${purchaseTokenAmount.toString()}`
-            + `&cbxaddress=${wallet.Path1899.slpAddress}`
-            + `&cbxcallback=${encodeURIComponent(callbackUrl)}`
-            +`#payment`
-        )
+        history.push('/wallet/checkout');
     };
 
     const handlePurchaseCancel = () => {
         setIsPurchaseModalVisible(false);
+        onCancel("user canceled payment");
+        sleep(1000);
+        window.close();
     };
 
     const sleep = (ms) => {
@@ -306,7 +310,7 @@ const SendBip70 = ({
         // Track number of XEC BIP70 transactions
         Event('SendBip70.js', 'SendBip70', type);
 
-        passLoadingStatus(true);
+        passLoadingStatus("SENDING TRANSACTION");
 
         try {
             // Send transaction
@@ -317,22 +321,14 @@ const SendBip70 = ({
                 false // testOnly
             );
             sendTokenNotification(link);
-
-            
-            // Send to success page if included in merchantDetails
-            if (paymentDetails.merchantData) {
-                const merchantDataJson = JSON.parse(paymentDetails.merchantData.toString());
-                if (merchantDataJson.callback?.success_url) {
-                    return window.location.assign(merchantDataJson.callback.success_url);
-                }
-            }
             
             onSuccess(txidStr, link);
-            await sleep(3000);
+            passLoadingStatus("SENDING COMPLETE");
+            loadReceipt(txidStr);
+            await sleep(1000);
             passLoadingStatus(false);
 
-            // Return to merchant
-            window.close();
+            history.push("/wallet/receipt");
         } catch (e) {
             const ticker = type == 'etoken' ?
                 currency.tokenTicker : currency.ticker;
@@ -391,160 +387,206 @@ const SendBip70 = ({
     }
 
     const priceApiError = fiatPrice === null && selectedCurrency !== 'XEC';
+    console.log("priceApiError", priceApiError);
 
     const displayBalance = tokenFormattedBalance || balances.totalBalance;
     const displayTicker = formData.token?.ticker || currency.ticker;
 
 	const { invoice, merchant_name, offer_description, offer_name } =
 		prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body || {};
-            
+
+    const handleTooltipExpand = (type) => {
+        if (type === "how") {
+            if (showHowitworks)
+                setShowHowitworks(false)
+            else 
+                setShowHowitworks(true)
+        } else if (type === "help") {
+            if (showHelp)
+                setShowHelp(false)
+            else 
+                setShowHelp(true)
+        }
+
+    }
+    
+    const loadReceipt = (tx_id) => {
+        console.log("formData.value", formData.value);
+        const receiptDetails = {
+            displayTicker,
+            tokenAmount: formData.value,
+            offer_name,
+            merchant_name, 
+            invoice, 
+            time_broadcasted: Date.now(),
+            tx_id
+        };
+        passReceipt(receiptDetails)
+    }
+    const SendBip70Ctn = styled.div`
+        background-color: #f6f6f6;
+        display: flex;
+        align-items: center;
+        min-height: 475px;
+        position: fixed;
+        top: 0;
+        width: inherit;
+        flex-direction: column;
+        justify-content: center;
+        gap: 18px;
+    `; 
+    const CustomForm = styled(Form)`
+        width: 85%;
+    `;
+
     return (
-        <>
-            <Modal
-                title="Confirm Send"
-                visible={isModalVisible}
-                onOk={handleOk}
-                onCancel={handleCancel}
-            >
-                <p>
-                    Are you sure you want to send {formData.value}{' '}
-                    {displayTicker} to settle this payment request?
-                </p>
-            </Modal>
-            <Modal
-                title={`Purchase ${displayTicker}`}
-                visible={isPurchaseModalVisible}
-                onOk={handlePurchaseOk}
-                onCancel={handlePurchaseCancel}
-            >
-                <p>
-                    You have insufficient funds. Do you want to purchase {' '}
-                    <strong>{purchaseTokenAmount}{' '}{displayTicker}{' '}</strong>
-                    in order to be able to settle this payment request?
-                </p>
-            </Modal>
-
-			<CheckoutHeader>
-				{/* <CheckoutIcon src={CheckOutIcon} />
-				<h4>CHECKOUT</h4> */}
-				{/* <hr /> */}
-                {(offer_name && (
+        <SendBip70Ctn>
+            <>
+                {checkSufficientFunds() && ( 
                     <>
-				        <h1>{offer_name}</h1>
-                    </>                    
-                ))}
-			</CheckoutHeader>
+                        <Modal
+                            title="Confirm Send"
+                            visible={isModalVisible}
+                            onOk={handleOk}
+                            onCancel={handleCancel}
+                        >
+                            <p>
+                                Are you sure you want to send {formData.value}{' '}
+                                {displayTicker} to settle this payment request?
+                            </p>
+                        </Modal>
+                        <Modal
+                            title={`Purchase ${displayTicker}`}
+                            visible={isPurchaseModalVisible}
+                            onOk={handlePurchaseOk}
+                            onCancel={handlePurchaseCancel}
+                        >
+                            <p>
+                                You have insufficient funds. Do you want to purchase {' '}
+                                <strong>{purchaseTokenAmount}{' '}{displayTicker}{' '}</strong>
+                                in order to be able to settle this payment request?
+                            </p>
+                        </Modal>            
+                        
+                        <ProgressDots progress={1} />
+                        <Balance>
+                            <BalanceLabel>Current Balance</BalanceLabel>
+                            <BalanceAmount>{displayBalance} {displayTicker}</BalanceAmount>
+                        </Balance>            
+                        <AuthCodeCtn>
+                            <AuthCode>
+                                <AuthCodeTextCtn>
+                                    <AuthCodeText>
+                                        Ready to send {formData.value}{' '}{displayTicker}
+                                    </AuthCodeText>
+                                    <InfoIcon src={InfoCircleOutlined} />
+                                </AuthCodeTextCtn>
+                            </AuthCode>
+                            <AuthCodeDescription>to fulfill this Payment Request</AuthCodeDescription>
+                        </AuthCodeCtn>
+                        <Offer>
+                            <OfferHeader>
+                                {offer_name &&                    
+                                    <OfferName>{offer_name}</OfferName>
+                                }
+                                <Merchant>
+                                    <MerchantIcon src={MerchantSvg} />
+                                    <MerchantTag>Merchant</MerchantTag>
+                                    <MerchantName>{merchant_name}</MerchantName>
+                                </Merchant>                            
+                            </OfferHeader>
+                            {(offer_description || prInfoFromUrl?.paymentDetails) && 
+                                <OfferDescription>{offer_description ? offer_description : prInfoFromUrl.paymentDetails.memo}</OfferDescription>
+                            }
+                        </Offer> 
+                        <Divider />   
 
-			<CheckoutStyles>
-				<PaymentDetails>
-					<h3 className="title">Payment Request Details:</h3>
-                    {(offer_description && (
-                        <>
-        					<p className="offer-description">{offer_description}</p>
-		        			<span className="merchant">From {merchant_name}</span>
-                        </>
-                    )) || (prInfoFromUrl && prInfoFromUrl.paymentDetails && (
-                        <>
-                            <p className="offer-description">{prInfoFromUrl.paymentDetails.memo}</p>                                                
-                        </>
-                    ))}
-				</PaymentDetails>
+                        <CustomForm>
+                            {prInfoFromUrl && prInfoFromUrl.paymentDetails && (
+                                <>
+                                    <Bip70AddressSingle
+                                        validateStatus={sendBchAddressError ? "error" : ""}
+                                        help={sendBchAddressError ? sendBchAddressError : ""}
+                                        inputProps={{
+                                            placeholder: `${currency.ticker} Address`,
+                                            name: "address",
+                                            required: true,
+                                            value: formData.address,
+                                        }}
+                                    ></Bip70AddressSingle>
 
-				<HorizontalSpacer />
+                                    {!formData.token && priceApiError && (
+                                        <AlertMsg>
+                                            Error fetching fiat price. Setting send by{" "}
+                                            {currency.fiatCurrencies[cashtabSettings.fiatCurrency].slug.toUpperCase()} disabled
+                                        </AlertMsg>
+                                    )}
+                                    {!formData.token && (
+                                        <ConvertAmount>
+                                            {fiatPriceString !== "" && "="} {fiatPriceString}
+                                        </ConvertAmount> 
+                                    )}
+                                </>
+                            )}
 
-				<PurchaseAuthCode>
-					{!checkSufficientFunds() && <p className="text-muted">You have insufficient funds in this wallet</p>}
-					<ListItem className="min-m">
-						<span className="key black">Ready To Send</span>
-						<span className="value black bold">
-							{formData.value} {displayTicker}
-						</span>
-					</ListItem>
-					<p className="text-muted">In order to settle this payment request</p>
-				</PurchaseAuthCode>
 
-				<HorizontalSpacer />
-
-				<PurchaseAuthCode>
-					<ListItem className="min-m">
-						<span className="key black">Balance</span>
-						<div className="value">
-							<div className="black bold">
-								{displayBalance} {displayTicker}
-							</div>
-						</div>
-					</ListItem>
-				</PurchaseAuthCode>
-
-				<HorizontalSpacer />
-
-				<Form>
-					{prInfoFromUrl && prInfoFromUrl.paymentDetails && (
-						<>
-							<Bip70AddressSingle
-								validateStatus={sendBchAddressError ? "error" : ""}
-								help={sendBchAddressError ? sendBchAddressError : ""}
-								inputProps={{
-									placeholder: `${currency.ticker} Address`,
-									name: "address",
-									required: true,
-									value: formData.address,
-								}}
-							></Bip70AddressSingle>
-
-							{!formData.token && priceApiError && (
-								<AlertMsg>
-									Error fetching fiat price. Setting send by{" "}
-									{currency.fiatCurrencies[cashtabSettings.fiatCurrency].slug.toUpperCase()} disabled
-								</AlertMsg>
-							)}
-							{!formData.token && (
-								<ConvertAmount>
-									{fiatPriceString !== "" && "="} {fiatPriceString}
-								</ConvertAmount>
-							)}
-						</>
-					)}
-
-                    {merchant_name && (
-                        <>
-                            <ListItem>
-                                <span className="key gray">Merchant:</span>
-                                <span className="value gray">{merchant_name}</span>
-                            </ListItem>                        
-                        </>
-                    )}
-
-                    {invoice && (
-                        <>
-                            <ListItem>
-                                <span className="key gray">Invoice:</span>
-                                <span className="value gray">{invoice}</span>
-                            </ListItem>                        
-                        </>
-                    )}
-
-                    {(merchant_name || invoice) && (
-                        <>
-					        <HorizontalSpacer />                        
-                        </>
-                    )}
-
-					<div>
-						{!checkSufficientFunds() ||
-						apiError ||
-						sendBchAmountError ||
-						sendBchAddressError ||
-						!prInfoFromUrl ? (
-							<SecondaryButton>Send</SecondaryButton>
-						) : (
-							<PrimaryButton onClick={() => showModal()}>Send</PrimaryButton>
-						)}
-					</div>
-					{apiError && <ApiError />}
-				</Form>
-			</CheckoutStyles>
-        </>
+                            <div>
+                                {!checkSufficientFunds() ||
+                                apiError ||
+                                sendBchAmountError ||
+                                sendBchAddressError ||
+                                !prInfoFromUrl ? (
+                                    <PrimaryButton>Awaiting Details...</PrimaryButton>
+                                ) : (
+                                    <PrimaryButton onClick={() => showModal()}>Send</PrimaryButton>
+                                )}
+                            </div> 
+                            {apiError && <ApiError />}
+                        </CustomForm> 
+                        <Support>
+                        {showHowitworks ? (
+                            <>
+                                <TooltipLine>
+                                    <TooltipExpand onClick={() => handleTooltipExpand("how")}>- How it works</TooltipExpand>
+                                    {invoice && <Invoice>INVOICE {invoice}</Invoice>}    
+                                </TooltipLine>
+                                <TooltipLine>
+                                    <TooltipExpand>
+                                        You already have enough tokens and do not need an Authorization Code. 
+                                        Upon sending, the wallet behind this checkout will build and broadcast the transaction to the merchant. 
+                                    </TooltipExpand>
+                                </TooltipLine>                                
+                            </>
+                        ) : (
+                            <>
+                                <TooltipLine>
+                                    <TooltipExpand onClick={() => handleTooltipExpand("how")}>+ How it works</TooltipExpand>
+                                    {invoice && <Invoice>INVOICE {invoice}</Invoice>}    
+                                </TooltipLine>
+                            </>
+                        )}
+                        {/*showHelp ? (
+                            <>
+                                <TooltipLine>
+                                    <TooltipExpand onClick={() => handleTooltipExpand("help")}>- Need help?</TooltipExpand>
+                                </TooltipLine>
+                                <TooltipLine>
+                                    <TooltipExpand>Help Text Placeholder.</TooltipExpand>        
+                                </TooltipLine>           
+                            </>
+                        ) : (
+                            <>
+                                <TooltipLine>
+                                    <TooltipExpand onClick={() => handleTooltipExpand("help")}>+ Need help?</TooltipExpand>
+                                </TooltipLine>                               
+                            </>
+                        )*/}                      
+                        </Support>    
+                    </>               
+                )}
+            </>
+        </SendBip70Ctn>
+    
     );
 };
 
@@ -561,6 +603,10 @@ SendBip70.defaultProps = {
 };
 
 SendBip70.propTypes = {
+    prInfoFromUrl: PropTypes.object,
+    onSuccess: PropTypes.func,
+    onCancel: PropTypes.func,
+    passReceipt: PropTypes.func,
     passLoadingStatus: PropTypes.func,
 };
 

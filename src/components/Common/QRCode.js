@@ -13,20 +13,19 @@ import { convertToEcashPrefix } from '@utils/cashMethods';
 export const StyledRawQRCode = styled(RawQRCode)`
     cursor: pointer;
     border-radius: 26px;
-    background: ${props => props.theme.qr.background};
-    box-shadow: ${props => props.theme.qr.shadow};
-    margin-bottom: 10px;
+    background: #fff;
+    box-shadow: 'rgb(136 172 243 / 25%) 0px 10px 30px, rgb(0 0 0 / 3%) 0px 1px 1px, rgb(0 51 167 / 10%) 0px 10px 20px';
     path:first-child {
-        fill: ${props => props.theme.qr.background};
+        fill: #fff;
     }
     :hover {
         border-color: ${({ xec = 0, ...props }) =>
-            xec === 1 ? props.theme.primary : props.theme.qr.token};
+            xec === 1 ? '#000000' : '#231F20'};
     }
     @media (max-width: 768px) {
         border-radius: 18px;
-        width: 170px;
-        height: 170px;
+        width: 250px;
+        height: 250px;
     }
 `;
 
@@ -103,6 +102,9 @@ const CustomInput = styled.div`
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 
     input {
         border: none;

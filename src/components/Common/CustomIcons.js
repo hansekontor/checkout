@@ -1,13 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import {
-    CopyOutlined,
-    DollarOutlined,
-    LoadingOutlined,
-    WalletOutlined,
-    QrcodeOutlined,
-    SettingOutlined,
-    LockOutlined,
+    LoadingOutlined
 } from '@ant-design/icons';
 import { Image } from 'antd';
 import { currency } from '@components/Common/Ticker';
@@ -26,33 +20,6 @@ export const TokenReceivedNotificationIcon = () => (
     />
 );
 
-export const MessageSignedNotificationIcon = () => (
-    <Image
-        src={currency.tokenLogo}
-        height={'33px'}
-        width={'30px'}
-        preview={false}
-    />
-);
-export const ThemedCopyOutlined = styled(CopyOutlined)`
-    color: ${props => props.theme.icons.outlined} !important;
-`;
-export const ThemedDollarOutlined = styled(DollarOutlined)`
-    color: ${props => props.theme.icons.outlined} !important;
-`;
-export const ThemedWalletOutlined = styled(WalletOutlined)`
-    color: ${props => props.theme.icons.outlined} !important;
-`;
-export const ThemedQrcodeOutlined = styled(QrcodeOutlined)`
-    color: ${props => props.theme.icons.outlined} !important;
-`;
-export const ThemedSettingOutlined = styled(SettingOutlined)`
-    color: ${props => props.theme.icons.outlined} !important;
-`;
-export const ThemedLockOutlined = styled(LockOutlined)`
-    color: ${props => props.theme.icons.outlined} !important;
-`;
-
 export const LoadingBlock = styled.div`
     width: 100%;
     display: flex;
@@ -63,7 +30,7 @@ export const LoadingBlock = styled.div`
     svg {
         width: 50px;
         height: 50px;
-        fill: ${props => props.theme.primary};
+        fill: #000000;
     }
 `;
 

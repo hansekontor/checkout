@@ -1,13 +1,13 @@
 export const theme = {
-    primary: '#00ABE7',
-    brandSecondary: '#CD0BC3',
+    primary: '#000000',
+    brandSecondary: '#000000',
     contrast: '#fff',
     app: {
         sidebars: `url("/cashtab_bg.png")`,
-        background: '#fbfbfd',
+        background: '#f6f6f6',
     },
     wallet: {
-        background: '#fff',
+        background: '#f6f6f6',
         text: {
             primary: '#273498',
             secondary: '#273498',
@@ -28,7 +28,7 @@ export const theme = {
         shadow: 'rgba(0, 0, 0, 1)',
     },
     footer: {
-        background: '#fff',
+        background: '#f6f6f6',
         navIconInactive: '#949494',
     },
     forms: {
@@ -53,9 +53,10 @@ export const theme = {
     },
     buttons: {
         primary: {
+            background: '#000000',
             backgroundImage:
                 'linear-gradient(270deg, #0074C2 0%, #273498 100%)',
-            color: '#fff',
+            color: '#ffffff',
             hoverShadow: '0px 3px 10px -5px rgba(0, 0, 0, 0.75)',
             disabledOverlay: 'rgba(255, 255, 255, 0.5)',
         },
@@ -78,4 +79,7 @@ export const theme = {
         },
         background: '#fff',
     },
+    a: {
+        color: '#000000',
+    }
 };

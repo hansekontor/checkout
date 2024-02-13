@@ -3,6 +3,7 @@ import {
     useLocation,
     useHistory
 } from 'react-router-dom';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import { WalletContext } from '@utils/context';
 import {
@@ -39,38 +40,44 @@ const { SLP } = script;
 import { U64 } from 'n64';
 import CheckOutIcon from "@assets/checkout_icon.svg";
 import {
-	CheckoutHeader,
-	CheckoutStyles,
-	PaymentDetails,
-	PurchaseAuthCode,
-	Heading,
-	ListItem,
-	CheckoutIcon,
-	HorizontalSpacer,
-    AgreeOverlay,
-    AgreeModal,
+    AuthCodeCtn, AuthCode,
+    AuthCodeTextCtn, AuthCodeText, InfoIcon, 
+    AuthCodeAmount, 
+    AuthCodeDescription, 
+    Offer, OfferHeader, OfferName, OfferDescription,
+    Fee, FeeLabel, FeeAmount, 
+    Total, TotalLabel, TotalAmount,
+    TooltipLine, TooltipExpand, TooltipExpandText,
+    Invoice, 
+    Support,
+    Overlay, WidgetContent, WidgetCtn
 } from "../../assets/styles/checkout.styles";
-import WertModule from '@wert-io/module-react-component';
 import { AcceptHosted, HostedForm } from 'react-acceptjs';
-
+import ProgressDots from '@components/Common/ProgressDots';
+import styled, { css } from 'styled-components';
+import MerchantSvg from '@assets/merchant_icon.svg';
+import Footer from '@components/Common/Footer';
+import Agree from '@components/Send/Agree';
+import { 
+    Header, HeaderTitle,
+    Merchant, MerchantName, MerchantTag, MerchantIcon
+} from '@components/Common/ContentHeader';
+import { Enfold, RollupAnimation } from '@components/Common/Animations';
+import InfoPng from '@assets/info_icon.png';
 
 const Checkout = ({ 
     prInfoFromUrl,
     onSuccess, 
     onCancel,
+    passReceipt, 
     passLoadingStatus
 }) => {
-    // use balance parameters from wallet.state object and not legacy balances parameter from walletState, if user has migrated wallet
-    // this handles edge case of user with old wallet who has not opened latest Cashtab version yet
 
-    // If the wallet object from ContextValue has a `state key`, then check which keys are in the wallet object
-    // Else set it as blank
-
+    const history = useHistory();
     const ContextValue = React.useContext(WalletContext);
     const location = useLocation();
     const { 
         wallet,
-        forceWalletUpdate,
         fiatPrice, 
         apiError, 
         cashtabSettings 
@@ -81,8 +88,10 @@ const Checkout = ({
         balances
     } = walletState;
     // Modal settings
+    // production/sandbox ids must be in that order for isSandbox
     const purchaseTokenIds = [
-        '4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a'
+        '52b12c03466936e7e3b2dcfcff847338c53c611ba8ab74dd8e4dadf7ded12cf6', // production
+        '4075459e0ac841f234bc73fc4fe46fe5490be4ed98bc8ca3f9b898443a5a381a' // sandbox
     ];
 
     const paymentServers = [
@@ -113,18 +122,19 @@ const Checkout = ({
     const [sendBchAddressError, setSendBchAddressError] = useState(false);
     const [sendBchAmountError, setSendBchAmountError] = useState(false);
     const [selectedCurrency, setSelectedCurrency] = useState(currency.ticker);
-
-    // Support cashtab button from web pages
-    // const [prInfoFromUrl, setPrInfoFromUrl] = useState(false);
+    const [progressCount, setProgressCount] = useState(0);
 
     // Show a confirmation modal on transactions created by populating form from web page button
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isSending, setIsSending] = useState(false);
 
     const [hasAgreed, setHasAgreed] = useState(false);
+    const [showHowitworks, setShowHowitworks] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
+    const [tokenInfoModal, tokenInfoHolder] = Modal.useModal();
+    const [isFirstRendering, setIsFirstRendering] = useState(true);
+    const [pay, setPay] = useState(false);
 
-    const [tokensMinted, setTokensMinted] = useState(false);
-    // const [tokensSent, setTokensSent] = useState(false);
     const [tokensSent, setTokensSent] = useState(null); // null or txid
     const [paymentId, setPaymentId] = useState(null); // paymentId as stored in the BUX db
     const [purchaseTokenAmount, setPurchaseTokenAmount] = useState(0);
@@ -133,6 +143,9 @@ const Checkout = ({
         const exchangeAdditionalAmount = (purchaseTokenAmount * .01).toFixed(2); // Exchange rate
         const feeAmount = ((Number(purchaseTokenAmount) + Number(exchangeAdditionalAmount)) * .04).toFixed(2); // Add 4% fee
         const totalAmount = (Number(purchaseTokenAmount) + Number(exchangeAdditionalAmount) + Number(feeAmount)).toFixed(2);
+
+
+
         return {
             exchangeAdditionalAmount,
             feeAmount,
@@ -146,20 +159,18 @@ const Checkout = ({
         totalAmount
     } = calculateFiat(purchaseTokenAmount);
 
-    // const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
-    const isSandbox = purchaseTokenIds.includes(formData.token?.tokenId);
-    // const tokenTypeVersion = purchaseTokenIds.slice(2).includes(formData.token?.tokenId) ? 2 : 1;
+
+
+    const isSandbox = purchaseTokenIds.slice(1).includes(formData.token?.tokenId);
     const tokenTypeVersion = 2
 
-    // Postage Protocol Check (for BURN)
-    const [postageData, setPostageData] = useState(null);
-    const [usePostage, setUsePostage] = useState(false);
+    // // Postage Protocol Check (for BURN)
+    // const [postageData, setPostageData] = useState(null); // unused
+    // const [usePostage, setUsePostage] = useState(false); // unused
 
     const [uuid, setUuid] = useState(null);
 
     const [formToken, setFormToken] = useState(null);
-
-    const divRef = useRef(null);
 
     const buildUuid = async (purchaseTokenAmount) => {
         if (uuid) {
@@ -180,7 +191,9 @@ const Checkout = ({
         uuidHex += `0${prUrlIndex}${Buffer.from(prId, 'utf8').toString('hex')}`;
         // Write amount as Big Endian buffer
         const buf = Buffer.allocUnsafe(4);
+        // const buf = Buffer.allocUnsafe(formData.token.decimals);
         buf.writeUInt32BE(purchaseTokenAmount * (10 ** 4), 0); // hardcoded for BUX. fix this
+        // buf.writeUInt32BE(purchaseTokenAmount * (10 ** formData.token.decimals), 0);
         // console.log('base token amount uuid hex', buf.toString('hex'))
         uuidHex += buf.toString('hex');
         // fetch address alias
@@ -196,7 +209,7 @@ const Checkout = ({
         uuidHex += genRanHex(2);
 
         const formattedUuid = `${uuidHex.slice(0, 8)}-${uuidHex.slice(8, 12)}-${uuidHex.slice(12, 16)}-${uuidHex.slice(16, 20)}-${uuidHex.slice(20, 32)}`
-        // console.log('formattedUuid', formattedUuid);
+        console.log('formattedUuid', formattedUuid);
         setUuid(formattedUuid);
 
         return formattedUuid;
@@ -221,12 +234,8 @@ const Checkout = ({
         return setFormToken(token);
     }
 
-    // const showModal = () => {
-    //     setIsModalVisible(true);
-    // };
-
     const handleOk = () => {
-        // setIsModalVisible(false);
+        console.log("handleOk() called")
         setIsSending(true);
         send();
     };
@@ -235,9 +244,6 @@ const Checkout = ({
         setIsModalVisible(false);
     };
 
-    const handleReturnToMerchant = () => {
-        window.close();
-    }
     const sleep = (ms) => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -245,11 +251,8 @@ const Checkout = ({
     const { 
         getBcashRestUrl, 
         sendBip70,
-        sendSelfMint,
         sendSelfMintV2,
-        generateBurnTx,
-        getMintVaultAddress,
-        getPostage,
+        getPostage, // unused ?
         readAuthCode
     } = useBCH();
 
@@ -260,16 +263,18 @@ const Checkout = ({
     }, [balances.totalBalance]);
 
     useEffect(() => {
-        // Check to see if purchase modal should be shown
+        // Check to see if user has sufficient token balance and, if so, redirect to sendBip70
         if (formData.token) {
             const difference = (Number(tokenFormattedBalance) - Number(formData.value))
                 .toFixed(formData.token.decimals);
             if (purchaseTokenIds.includes(formData.token?.tokenId)) {
                 // Set amount to purchase
-                let purchaseAmount = difference < 0 ? Math.abs(difference) : 0
+                let purchaseAmount = difference < 0 ? Number(formData.value) : 0;
                 if (purchaseAmount > 0) {
                     const rounded = Math.ceil(purchaseAmount * 100) / 100;
                     purchaseAmount = rounded < 1 ? 1 : rounded;
+                } else {
+                    history.push('/wallet/sendbip70');
                 }
                 setPurchaseTokenAmount(purchaseAmount);
                 buildUuid(purchaseAmount);
@@ -280,6 +285,14 @@ const Checkout = ({
 
     useEffect(async () => {
         await populateFormsFromPaymentDetails(prInfoFromUrl.paymentDetails);
+    }, []);
+
+    useEffect(() => {
+        console.log("useEffect firstrender", isFirstRendering, hasAgreed);
+        if (isFirstRendering && hasAgreed) {
+            console.log("useEffect firstRendering clause")
+            setIsFirstRendering(false);
+        }
     }, []);
 
     async function populateFormsFromPaymentDetails(paymentDetails) {
@@ -384,8 +397,9 @@ const Checkout = ({
 
         errorNotification(errorObj, message, `Sending ${ticker}`);
         onCancel(message);
-        passLoadingStatus("An error ocurred. You will be redirected to the merchant.")
-        await sleep(5000);
+        // passLoadingStatus("An error ocurred. You will be redirected to the merchant.")
+        passLoadingStatus("AN ERROR OCURRED. WINDOW CLOSING...");
+        await sleep(3000);
         window.close()
 
     }
@@ -407,7 +421,7 @@ const Checkout = ({
         // Track number of XEC BIP70 transactions
         Event('SendBip70.js', 'SendBip70', type);
 
-        passLoadingStatus("Please wait while your transaction is broadcast");
+        passLoadingStatus("TRANSACTION PROCESSING");
 
         try {
             // Send transaction
@@ -419,33 +433,21 @@ const Checkout = ({
                 false, // isPreburn
                 rawChainTxs
             );
-            sendTokenNotification(link);
-            
-            // Send to success page if included in merchantDetails
-            if (paymentDetails.merchantData) {
-                const merchantDataJson = JSON.parse(paymentDetails.merchantData.toString());
-                if (merchantDataJson.callback?.success_url) {
-                    return window.location.assign(merchantDataJson.callback.success_url);
-                }
-            }
 
             const linkParts = link.split('/')
             const sentTxid = linkParts[linkParts.length - 1]
             setTokensSent(sentTxid)
-            // setTokensSent(true)
             onSuccess(txidStr, link)            
-            passLoadingStatus("Payment successful. Please screenshot the receipt.");
+            passLoadingStatus("TRANSACTION COMPLETE");
             await sleep(3000);
             passLoadingStatus(false);
-            // Return to merchant site
-            // window.close();
         } catch (e) {
             console.error(e)
             // Retry send if response is 402 or 404 (mitigates stamp/baton race conditions)
             if ((e.cause.code === 402 || e.cause.code === 404) && attempt < 3) {
                 console.log("error", e.cause);
                 const nextAttempt = attempt + 1;
-                passLoadingStatus(`Payment unsuccessful. Retrying... (${nextAttempt}/3)`);
+                passLoadingStatus(`PAYMENT UNSUCCESSFUL. RETRYING... (${nextAttempt}/3)`);
                 await sleep(5000);
                 if (authCodeB64)
                     return doSelfMint(authCodeB64, nextAttempt);
@@ -465,6 +467,7 @@ const Checkout = ({
     }
 
     const doSelfMint = async (authCodeB64, attempt = 1, rawBurnTx) => {
+        console.log("doSelfMint() called")
         setFormData({
             ...formData,
             dirty: false,
@@ -485,9 +488,8 @@ const Checkout = ({
         // Track number of XEC BIP70 transactions
         Event('SelfMint.js', 'SelfMint', authCodeB64);
 
-        passLoadingStatus("Please wait while your tokens are minted");
+        passLoadingStatus("MINTING TOKENS");
 
-        //const doChainedMint = Number(tokenFormattedBalance) === 0;
         // default to always doing a chained mint here, don't show SEND button
         const doChainedMint = true;
 
@@ -497,15 +499,7 @@ const Checkout = ({
             } = readAuthCode(authCodeB64);
             // Send transaction
             let rawMintTx;
-            if (version === 1) {
-                rawMintTx = await sendSelfMint(
-                    wallet,
-                    tokenId,
-                    authCodeB64,
-                    false, // testOnly
-                    doChainedMint
-                );
-            } else {
+            if (version === 2) {
                 rawMintTx = await sendSelfMintV2(
                     wallet,
                     authCodeB64,
@@ -514,9 +508,13 @@ const Checkout = ({
                     rawBurnTx,
                     isSandbox
                 );
+            } else {
+                errorNotification(`unsupported Self-Mint-Token version: ${version}`);
+                onCancel(`unsupported Self-Mint-Token version: ${version}`);
+                passLoadingStatus("INVALID VERSION. WINDOW CLOSING...")
+                await sleep(3000);
+                window.close();
             }
-
-            setTokensMinted(true);
 
             if (doChainedMint)
                 return send(
@@ -528,10 +526,6 @@ const Checkout = ({
                     attempt
                 )
 
-            selfMintTokenNotification();
-            // Sleep for 10 seconds and then 
-            // await sleep(10000);
-            forceWalletUpdate();
             // Manually disable loading
             return passLoadingStatus(true);
             // return window.location.reload();
@@ -589,7 +583,7 @@ const Checkout = ({
                 return;
             }
 
-            passLoadingStatus('Processing payment information...');
+            passLoadingStatus("PROCESSING PAYMENT")
             const tokenUrl = `https://${isSandbox ? 'dev-api.' : ''}bux.digital/v2/authpaymenttransaction`;
             const transResponse = await fetch(tokenUrl, {
                 method: 'POST',
@@ -607,7 +601,7 @@ const Checkout = ({
             });
             const transId = (await transResponse.json()).transId;
             // Call your server to save the transaction
-            passLoadingStatus('Fetching authorization code...');
+            passLoadingStatus("FETCHING AUTHORIZATION CODE");
             let burnTx;
             const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${result.transId || transId}`, {
                 method: 'get',
@@ -628,354 +622,305 @@ const Checkout = ({
         }
     }
 
-    const wertSuccess = async (result) => {
-        try {
-            console.log('result', result);
-
-            if (result.status !== 'success') {
-                if (result.status === 'pending') {
-                    console.log('wert pending')
-                    divRef.current.scrollIntoView();
-                    // divRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-                    passLoadingStatus(
-                        'Processing payment. This can take up to 60 seconds.'
-                    );
-                } else {
-                    console.log(`wert ${result.status}`)
-                    passLoadingStatus(false);
-                }
-                return;
-            }
-
-            // Your code here after capture the order
-            passLoadingStatus('true');
-            // Handle token/fiat split payment
-            let burnTx;
-            // if (Number(tokenFormattedBalance) >= .01) {
-            //     passLoadingStatus('Adding existing wallet balance to payment...');
-            //     const mintVaultBatonOutput = new Output({
-            //         address: getMintVaultAddress(isSandbox),
-            //         value: 5700
-            //     })
-            //     burnTx = await generateBurnTx(
-            //         wallet,
-            //         formData.token.tokenId,
-            //         [],
-            //         mintVaultBatonOutput
-            //     );
-            // }
-            // console.log('burnTx', burnTx && burnTx.toString('hex'))
-            // passLoadingStatus('Fetching authorization code...');
-            // // Call your server to save the transaction
-            // const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${result.order_id}`, {
-            //     method: 'get',
-            //     headers: {
-            //         'content-type': 'application/json',
-            //         ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
-            //     }
-            // });
-
-            // const data = await response.json();
-            doSelfMint(result.authcode, 1, burnTx);
-        } catch (err) {
-            console.log(err);
-            const { type } = prInfoFromUrl;
-            const ticker = type == 'etoken' ?
-                currency.tokenTicker : currency.ticker;
-            handleSendXecError(err, ticker);
-        }
-    }
-
-    const payButtonStyle = {
-        border: 'none',
-        color: 'rgb(255, 255, 255)',
-        backgroundImage: 'linear-gradient(270deg, rgb(0, 116, 194) 0%, rgb(39, 52, 152) 100%)',
-        transition: 'all 0.5s ease 0s',
-        backgroundSize: '200%',
-        fontSize: '18px',
-        width: '80%',
-        padding: '20px 0px',
-        borderRadius: '4px',
-        marginBottom: '20px',
-        cursor: 'pointer',
-    };
-
-    const payButtonText = 'PAY WITH CREDIT CARD';
-    const payFormHeaderText = `Pay $${totalAmount} - Self-mint Authorization Code (${purchaseTokenAmount} BUX)`
-
     const priceApiError = fiatPrice === null && selectedCurrency !== 'XEC';
 
-    const displayBalance = tokenFormattedBalance || balances.totalBalance;
+    const displayBalance = tokenFormattedBalance || balances.totalBalance; // unused
     const displayTicker = formData.token?.ticker || currency.ticker;
+
+     const payButtonStyle = {
+        all: 'unset',
+        border: 'none',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+        width: '100%',
+        padding: '12px 16px',
+        cursor: 'pointer',
+        boxSizing: 'border-box',
+        alignItems: 'center',
+        display: 'flex',
+        justifyContent: 'center',
+        position: 'relative',
+    };
+
+    const payButtonText = 'Pay now';
+    const payFormHeaderText = `Pay $${totalAmount} - Self-mint Authorization Code (${purchaseTokenAmount} ${displayTicker})` // used?   
+    const tokenInfoText = `${displayTicker} is a dollar-backed digital currency with greater than 100% reserves in US dollars. One ${displayTicker} is always one USD.`;
+    const tokenInfoConfig = {
+        content: <p>{tokenInfoText}</p>
+    };
     const { invoice, merchant_name, offer_description, offer_name } = prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body || {};
     const isStage1 = !checkSufficientFunds() || apiError || sendBchAmountError || sendBchAddressError || !prInfoFromUrl;
-    // For making SEND button available
+    // For making SEND button available // unused
     if (!isStage1) {
         passLoadingStatus(false);
     }
 
+    const CheckoutCtn = styled.div`
+        background-color: #f6f6f6;
+        display: flex;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        flex-direction: column;
+        justify-content: center;
+        gap: 18px;
+        width: inherit;
+    `; 
+    const Divider = styled.div`
+        height: 1px;
+        width: 85%;
+        background-color: #000000;
+    `;
+    const AgreeButtonCtn = styled.div`
+        height: 120px;
+        bottom: 0;
+        width: inherit;
+        align-items: center;
+        background-color: #ffffff !important;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        justify-content: center;
+        position: fixed;
+        padding: 30px;
+    `;
+    const HostedFormCtn = styled.div`
+        width: 85%;
+    `;    
+    const WidgetComponent = window.Widget.driver('react', {
+        React, 
+        ReactDOM
+    });
+
+    const handleAgree = async () => {
+        setProgressCount(1);
+        setHasAgreed(true);
+        await sleep(500);
+        setIsFirstRendering(false);
+    }
+
+    const handleTooltipExpand = (type) => {
+        setIsFirstRendering(false);
+        if (type === "how") {
+            if (showHowitworks)
+                setShowHowitworks(false)
+            else 
+                setShowHowitworks(true)
+        } else if (type === "help") {
+            if (showHelp)
+                setShowHelp(false)
+            else 
+                setShowHelp(true)
+        }
+    }
+
+
+    const loadReceipt = (tx_id) => {
+        const receiptDetails = {
+            displayTicker,
+            order_number: paymentId,
+            totalAmount,
+            tokenAmount: purchaseTokenAmount,
+            offer_name,
+            merchant_name,
+            invoice,
+            time_broadcasted: Date.now(),
+            tx_id
+        };
+        passReceipt(receiptDetails);
+    }
+
+    useEffect(async () => {
+        if (tokensSent) {
+            loadReceipt(tokensSent);
+            await sleep(1000);
+            history.push('/wallet/receipt');
+        }
+    }, [tokensSent]);
+
+    const PaymentOverlay = styled(Overlay)`
+        width: inherit;
+        max-width: 480px;
+    `;
+    const RollupContent = styled(WidgetCtn)`
+        ${RollupAnimation}
+        div {
+            width: inherit;
+            height: inherit;
+        }
+    `;
+
+    
     return (
-        <>
-            <Modal
-                title="Confirm Send"
-                visible={isModalVisible}
-                onOk={handleOk}
-                onCancel={handleCancel}
-            >
-                <p>
-                    Are you sure you want to send {formData.value}{' '}
-                    {displayTicker} to settle this payment request?
-                </p>
-            </Modal>
+        <>  
+            {tokenInfoHolder}
+            {/*add code below for payment widget */}
+            {/* {pay && ( 
+                <PaymentOverlay>
+                    <RollupContent animate={true}>
+                        <WidgetComponent 
+                            amount={totalAmount}
+                            sandbox={isSandbox}
+                            onResult={(status) => console.log("Parent Component status", status)}
+                        />
+                    </RollupContent>
+                </PaymentOverlay>
+            )} */}
+            <CheckoutCtn>            
 
-                <CheckoutHeader ref={divRef} tabindex="-1">
-                    {/* <CheckoutIcon src={CheckOutIcon} /> */}
-                    {/* <h4>CHECKOUT</h4> */}
-                    {/* <hr />              */}
-                    {(offer_name && (
-                        <>
-                            <h1>{offer_name}</h1>
-                        </>
-                    ))}                            
-                </CheckoutHeader>
-
-			<CheckoutStyles>
-				<PaymentDetails>
-                    <h3 className="title">{tokensSent ? 'Receipt ' : 'Payment Request '}Details:</h3>
-                    {(offer_description && (
-                        <>
-                            <p className="offer-description">{offer_description}</p>
-                            <span className="merchant">From {merchant_name}</span>
-                        </>
-                    )) || (prInfoFromUrl && prInfoFromUrl.paymentDetails && (
-                        <>
-                            <p className="offer-description">{prInfoFromUrl.paymentDetails.memo}</p>                        
-                        </>
-                    ))}
-				</PaymentDetails>
-
-				<HorizontalSpacer />
-
-				{(isStage1 && (
-					<>
-                        {!tokensSent ? (
-                            <PurchaseAuthCode>
-                                {!checkSufficientFunds() && <p className="text-muted">You have insufficient funds in this wallet</p>}
-                                <ListItem className="min-m">
-                                    <span className="key black">Purchase an Auth Code for</span>
-                                    <span className="value black bold">
-                                        {purchaseTokenAmount} {displayTicker}
-                                    </span>
-                                </ListItem>
-                                <p className="text-muted">In order to settle this payment request</p>
-                            </PurchaseAuthCode>
-                        ) : (
-                            <PurchaseAuthCode>
-                                {!checkSufficientFunds() && <p className="text-muted">Payment Success!</p>}
-                                <ListItem className="min-m">
-                                    <span className="key black">You purchased and used an Auth Code for</span>
-                                    <span className="value black bold">
-                                        {purchaseTokenAmount} {displayTicker}
-                                    </span>
-                                </ListItem>
-                                <p className="text-muted">{(new Date()).toString()}</p>
-                                {paymentId && (
-                                    <p className="text-muted">BUX Order #{paymentId} </p>
-                                )}
-                                <p className="text-muted">XEC transaction ID:</p>
-                                <p className="text-muted-small">
-                                    <a target="_blank" rel="noopener noreferrer" href={`https://explorer.cert.cash/tx/${tokensSent}`}>{tokensSent}</a>
-                                </p>
-                                <p className="text-red">Please screenshot or print this receipt for your records</p>
-                            </PurchaseAuthCode>
-                        )}
-
-						<HorizontalSpacer />
-
-						<Heading>Transaction Details:</Heading>
-
-						<ListItem>
-							<span className="key gray">Auth Code Subtotal:</span>
-							<span className="value gray">${purchaseTokenAmount.toFixed(2)}</span>
-						</ListItem>
-
-						<ListItem>
-							<span className="key gray">Transaction Fee:</span>
-							<span className="value gray">${(Number(exchangeAdditionalAmount) + Number(feeAmount)).toFixed(2)}</span>
-						</ListItem>
-                        {tokensSent && (
-                            <ListItem>
-                                <span className="key gray">Paid:</span>
-                                <span className="value gray">-${totalAmount}</span>
-                            </ListItem>
-                        )}
-						<ListItem>
-							<span className="key gray bold">Total:</span>
-							<span className="value gray bold">${tokensSent ? 0 : totalAmount}</span>
-						</ListItem>
-					</>
-				)) || (
-					<>
-						<PurchaseAuthCode>
-							<ListItem className="min-m">
-								<span className="key black">Ready To Send</span>
-								<span className="value black bold">
-									{formData.value} {displayTicker}
-								</span>
-							</ListItem>
-							<p className="text-muted">In order to settle this payment request</p>
-						</PurchaseAuthCode>
-					</>
-				)}
-
-				<HorizontalSpacer />
+                {/*<Modal
+                    title="Confirm Send"
+                    visible={isModalVisible}
+                    onOk={handleOk}
+                    onCancel={handleCancel}
+                >
+                    <p>
+                        Are you sure you want to send {formData.value}{' '}
+                        {displayTicker} to settle this payment request?
+                    </p>
+                </Modal>*/}                
                 
-                {/*old solution with merchant_name and invoice on two separate lines:*/}
-                {/* {merchant_name && (
-                    <>
-                        <ListItem>
-                            <span className="key gray">Merchant:</span>
-                            <span className="value gray">{merchant_name}</span>
-                        </ListItem>                       
-                    </>
-                )}
+                <ProgressDots progress={progressCount} />
 
-                {invoice && (
+                {!hasAgreed ? (
                     <>
-                        <ListItem>
-                            <span className="key gray">Invoice:</span>
-                            <span className="value gray">{invoice}</span>
-                        </ListItem>                    
-                    </>
-                )} */}
-
-				{(merchant_name || invoice) && (
+                        <Agree 
+                            offer_name={prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body?.offer_name}
+                            merchant_name={merchant_name}
+                        />
+                        <AgreeButtonCtn>
+                            <PrimaryButton onClick={() => handleAgree()}>Agree and Continue</PrimaryButton>
+                        </AgreeButtonCtn>    
+                    </>      
+                ) : (
                     <>
-                        <ListItem>
-                            {merchant_name && (
-                                <span className="value gray">{merchant_name}</span>
-                            )}
-                            {invoice && (
-                                <span className="value gray">Inv. {invoice}</span>
-                            )}
-                        </ListItem>
-                        <HorizontalSpacer />                    
-                    </>
-                )}
-			</CheckoutStyles>
-
-            {isStage1 ? (
-                <>
-                    { hasAgreed && (
-                        <>
-                        {!tokensMinted && uuid && formToken ? 
+                        {!tokensSent && isStage1 && (
                             <>
-                                <p className="text-muted">
-                                    By making this purchase you agree to the
-                                    <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a>
-                                </p>
-                                {prInfoFromUrl.paymentDetails.merchantDataJson.ipn_body?.offer_name ? (
-                                    <WertModule
-                                        style={{height: "580px"}}
-                                        options={{
-                                            partner_id: isSandbox ? '01H97V3M5ZZPVS7RXW2V2NXVN5' : '01HB6ASSZED5SH5V8KWQD1MR87' ,
-                                            origin: `https://${isSandbox ? 'sandbox' : 'widget'}.wert.io`,
-                                            click_id: uuid, // unique id of purchase in your system
-                                            currency: 'USD',
-                                            commodity: 'BUX', // name of your token in Wert system
-                                            network: isSandbox ? 'testnet' : 'mainnet', 
-                                            address: wallet.Path1899.cashAddress,
-                                            commodities: JSON.stringify([
-                                                {
-                                                commodity: 'BUX',
-                                                network: isSandbox ? 'testnet' : 'mainnet',
-                                                }, // this restricts what currencies will be available in the widget
-                                            ]),
-                                            commodity_amount: purchaseTokenAmount, // amount being minted
-                                            listeners: {
-                                                loaded: () => console.log('Wert widget loaded'),
-                                                "payment-status": (result) => wertSuccess(result)
+                                <Enfold animate={isFirstRendering}>
+                                    <AuthCodeCtn>
+                                        <AuthCode>
+                                            <AuthCodeTextCtn>
+                                                <AuthCodeText>
+                                                    Purchase Auth Code for {purchaseTokenAmount} {displayTicker}
+                                                </AuthCodeText>
+                                                <InfoIcon src={InfoPng} onClick={() => tokenInfoModal.info(tokenInfoConfig)} />
+                                            </AuthCodeTextCtn>
+                                            <AuthCodeAmount>${purchaseTokenAmount.toFixed(2)}</AuthCodeAmount>                        
+                                        </AuthCode>
+                                        <AuthCodeDescription>This will instantly settle this payment request</AuthCodeDescription>
+                                    </AuthCodeCtn>
+                                    <Offer>
+                                        <OfferHeader>
+                                            {offer_name &&                    
+                                                <OfferName>{offer_name}</OfferName>
                                             }
-                                        }}
-                                    />
-                                ) : (
-                                    <>
-                                    <HostedForm 
-                                        authData={{
-                                            apiLoginID: isSandbox ? '25W2mLe5' : '469zGVDrekmC',
-                                            clientKey: isSandbox ? '8TEqfrHqLh4UWqUY8Sf3H8fq5PyczM9gqfV927Rq8Q5eFwVs2P8UYn7H8MK8Fy4T' : '74AUbX9mjmMFFBs38EG8q46dEaxNy9kC6p8rK4f33nw6yGhFn6g62vrX5d2KGAQ8'
-                                        }} 
-                                        onSubmit={authorizenetSuccess}
-                                        environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
-                                        billingAddressOptions={{show: true, required: true}}
-                                        buttonStyle={payButtonStyle}
-                                        buttonText={payButtonText}
-                                        formHeaderText={payFormHeaderText}
-                                    />
-                                    {/* <AcceptHosted
-                                        formToken={formToken}
-                                        integration="iframe"
-                                        onTransactionResponse={authorizenetSuccess}
-                                        environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
-                                    >
-                                        <AcceptHosted.Button 
-                                        style={payButtonStyle}
-                                        >
-                                            {payButtonText}}
-                                        </AcceptHosted.Button>
-                                        <AcceptHosted.IFrameBackdrop />
-                                        <AcceptHosted.IFrameContainer>
-                                            <AcceptHosted.IFrame />
-                                        </AcceptHosted.IFrameContainer>
-                                    </AcceptHosted> */}
-                                    </>
-                                )}
-                            </>
-                            : (
-                                <>
-                                    {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
-                                    /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
-                                </>
-                            )
-                        }
-                        </>
-                    )}
-                </>
-            ) : (
-                <>
-                    {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
-                    /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
+                                            <Merchant>
+                                                <MerchantIcon src={MerchantSvg} />
+                                                <MerchantTag>Merchant</MerchantTag>
+                                                <MerchantName>Zoid</MerchantName>
+                                            </Merchant>                            
+                                        </OfferHeader>
+                                        {(offer_description || prInfoFromUrl.paymentDetails) && 
+                                            <OfferDescription>{offer_description ? offer_description : prInfoFromUrl.paymentDetails.memo}</OfferDescription>
+                                        }
+                                    </Offer>
+                                    <Divider />
+                                    <Fee>
+                                        <FeeLabel>Processing Fee</FeeLabel>
+                                        <FeeAmount>${(Number(exchangeAdditionalAmount) + Number(feeAmount)).toFixed(2)}</FeeAmount>
+                                    </Fee>
+                                    <Total>
+                                        <TotalLabel>Total</TotalLabel>
+                                        <TotalAmount>${totalAmount}</TotalAmount>
+                                    </Total>
+                                    {isStage1 ? (
+                                        <>
+                                            { hasAgreed && (
+                                                <>
+                                                    {uuid && formToken ? (
+                                                            <>
+                                                                <HostedFormCtn>
+                                                                    <HostedForm 
+                                                                        authData={{
+                                                                            apiLoginID: isSandbox ? '25W2mLe5' : '469zGVDrekmC',
+                                                                            clientKey: isSandbox ? '8TEqfrHqLh4UWqUY8Sf3H8fq5PyczM9gqfV927Rq8Q5eFwVs2P8UYn7H8MK8Fy4T' : '74AUbX9mjmMFFBs38EG8q46dEaxNy9kC6p8rK4f33nw6yGhFn6g62vrX5d2KGAQ8'
+                                                                        }} 
+                                                                        onSubmit={authorizenetSuccess}
+                                                                        environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
+                                                                        billingAddressOptions={{show: true, required: true}}
+                                                                        buttonStyle={payButtonStyle}
+                                                                        buttonText={payButtonText}
+                                                                        formHeaderText={payFormHeaderText}
+                                                                    />
+                                                                    {/*use button below for payment widget */}
+                                                                    {/* <PrimaryButton onClick={() => setPay(true)}>{payButtonText}</PrimaryButton>                                                               */}
+                                                                </HostedFormCtn>
+                                                            </>
+                                                    ) : (
+                                                        <>
+                                                            {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
+                                                            /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
+                                                        </>
+                                                        )}
+                                                </>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isSending && !tokensSent ? <Spin spinning={true} indicator={CashLoadingIcon}></Spin> :
+                                            /* <PrimaryButton onClick={() => handleOk()}>Send</PrimaryButton>*/<></>}
+                                        </>
+                                    )}
+                                    <Support>
+                                        {showHowitworks ? (
+                                            <>
+                                                <TooltipLine>
+                                                    <TooltipExpand onClick={() => handleTooltipExpand("how")}>- How it works</TooltipExpand>
+                                                    {invoice && <Invoice>INVOICE {invoice}</Invoice>}    
+                                                </TooltipLine>
+                                                <TooltipLine>
+                                                    <TooltipExpandText>
+                                                        Get immediate access to the offer with our unique Authorization Code. 
+                                                        Upon purchase, the wallet behind this checkout will receive this Code and use it to build and broadcast the transaction to the merchant. 
+                                                        Each code is unique and can only be used once.
+                                                    </TooltipExpandText>
+                                                </TooltipLine>                                
+                                            </>
+                                        ) : (
+                                            <>
+                                                <TooltipLine>
+                                                    <TooltipExpand onClick={() => handleTooltipExpand("how")}>+ How it works</TooltipExpand>
+                                                    {invoice && <Invoice>INVOICE {invoice}</Invoice>}    
+                                                </TooltipLine>
+                                        </>
+                                        )}
+                                        {/*showHelp ? (
+                                            <>
+                                                <TooltipLine>
+                                                    <TooltipExpand onClick={() => handleTooltipExpand("help")}>- Need help?</TooltipExpand>
+                                                </TooltipLine>
+                                                <TooltipLine>
+                                                    <TooltipExpand>Help Text Placeholder.</TooltipExpand>
+                                                </TooltipLine>           
+                                            </>
+                                        ) : (
+                                            <>
+                                                <TooltipLine>
+                                                    <TooltipExpand onClick={() => handleTooltipExpand("help")}>+ Need help?</TooltipExpand>
+                                                </TooltipLine>                               
+                                            </>
+                                        )*/}
+                                    </Support>
+                                </Enfold>      
+                            </>              
+                        )}                 
+                    </>         
+                )}
 
+                {apiError && <ApiError />}
 
-                </>
-            )}
-            {tokensSent && (
-                <PrimaryButton onClick={() => handleReturnToMerchant()}>Return to Merchant</PrimaryButton>
-            )}
-
-            {apiError && <ApiError />}
-
-            { !hasAgreed && isStage1 &&
-                <AgreeOverlay>
-                    <AgreeModal>
-                        <Heading>You are about to purchase a BUX Self-Mint Authorization Code</Heading>
-                        <HorizontalSpacer />
-                        <span className="key black">To proceed you must agree to the following:</span>
-                        <p className=" first">1. The seller of the digital good in this transaction is 
-                            <a 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                href={prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body?.offer_name ? "https://wert.io" : "https://bux.digital"}>
-                                    {prInfoFromUrl.paymentDetails?.merchantDataJson?.ipn_body?.offer_name ? ' WERT.IO' : ' BADGER LLC'}
-                            </a>
-                        </p>
-                        <p>2. This purchase is for an authorization code ONLY. It is not a purchase of digital currency, credits on any third-party platform, or any other product or service</p>
-                        <p>3. This unhosted wallet, upon receiving the authorization code (after your credit card payment is made), will mint and send BUX tokens to settle the payment request</p>
-                        <p>4. You have read and understand the BUX <a target="_blank" rel="noopener noreferrer" href="https://bux.digital/tos.html"> Terms Of Service</a></p>
-                        <PrimaryButton onClick={() => setHasAgreed(true)}>I Agree</PrimaryButton>
-                    </AgreeModal>
-                </AgreeOverlay>
-            }
+            </CheckoutCtn>
+            {hasAgreed && <Footer />}
         </>
     );
 };
