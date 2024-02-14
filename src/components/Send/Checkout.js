@@ -64,6 +64,7 @@ import {
 } from '@components/Common/ContentHeader';
 import { Enfold, RollupAnimation } from '@components/Common/Animations';
 import InfoPng from '@assets/info_icon.png';
+import PaymentForm  from '@components/zoid/payment-form';
 
 const Checkout = ({ 
     prInfoFromUrl,
@@ -173,6 +174,7 @@ const Checkout = ({
     const [formToken, setFormToken] = useState(null);
 
     const buildUuid = async (purchaseTokenAmount) => {
+        console.log("buildUuid() address", wallet.Path1899.slpAddress);
         if (uuid) {
             // console.log('uuid', uuid);
             return uuid;
@@ -687,7 +689,7 @@ const Checkout = ({
     const HostedFormCtn = styled.div`
         width: 85%;
     `;    
-    const WidgetComponent = window.Widget.driver('react', {
+    const PaymentFormWidget = PaymentForm.driver('react', {
         React, 
         ReactDOM
     });
@@ -755,17 +757,17 @@ const Checkout = ({
         <>  
             {tokenInfoHolder}
             {/*add code below for payment widget */}
-            {/* {pay && ( 
+            {pay && ( 
                 <PaymentOverlay>
                     <RollupContent animate={true}>
-                        <WidgetComponent 
+                        <PaymentFormWidget 
                             amount={totalAmount}
                             sandbox={isSandbox}
                             onResult={(status) => console.log("Parent Component status", status)}
                         />
                     </RollupContent>
                 </PaymentOverlay>
-            )} */}
+            )}
             <CheckoutCtn>            
 
                 {/*<Modal
@@ -840,20 +842,22 @@ const Checkout = ({
                                                     {uuid && formToken ? (
                                                             <>
                                                                 <HostedFormCtn>
-                                                                    <HostedForm 
-                                                                        authData={{
-                                                                            apiLoginID: isSandbox ? '25W2mLe5' : '469zGVDrekmC',
-                                                                            clientKey: isSandbox ? '8TEqfrHqLh4UWqUY8Sf3H8fq5PyczM9gqfV927Rq8Q5eFwVs2P8UYn7H8MK8Fy4T' : '74AUbX9mjmMFFBs38EG8q46dEaxNy9kC6p8rK4f33nw6yGhFn6g62vrX5d2KGAQ8'
-                                                                        }} 
-                                                                        onSubmit={authorizenetSuccess}
-                                                                        environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
-                                                                        billingAddressOptions={{show: true, required: true}}
-                                                                        buttonStyle={payButtonStyle}
-                                                                        buttonText={payButtonText}
-                                                                        formHeaderText={payFormHeaderText}
-                                                                    />
-                                                                    {/*use button below for payment widget */}
-                                                                    {/* <PrimaryButton onClick={() => setPay(true)}>{payButtonText}</PrimaryButton>                                                               */}
+                                                                    <>
+                                                                        {/* <HostedForm 
+                                                                            authData={{
+                                                                                apiLoginID: isSandbox ? '25W2mLe5' : '469zGVDrekmC',
+                                                                                clientKey: isSandbox ? '8TEqfrHqLh4UWqUY8Sf3H8fq5PyczM9gqfV927Rq8Q5eFwVs2P8UYn7H8MK8Fy4T' : '74AUbX9mjmMFFBs38EG8q46dEaxNy9kC6p8rK4f33nw6yGhFn6g62vrX5d2KGAQ8'
+                                                                            }} 
+                                                                            onSubmit={authorizenetSuccess}
+                                                                            environment={isSandbox ? 'SANDBOX' : 'PRODUCTION'}
+                                                                            billingAddressOptions={{show: true, required: true}}
+                                                                            buttonStyle={payButtonStyle}
+                                                                            buttonText={payButtonText}
+                                                                            formHeaderText={payFormHeaderText}
+                                                                        /> */}
+                                                                        {/*use button below for payment widget */}
+                                                                        <PrimaryButton onClick={() => setPay(true)}>{payButtonText}</PrimaryButton>
+                                                                    </>
                                                                 </HostedFormCtn>
                                                             </>
                                                     ) : (

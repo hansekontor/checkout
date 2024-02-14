@@ -5,7 +5,7 @@ import App from './components/App';
 import { AuthenticationProvider, WalletProvider } from './utils/context';
 import { HashRouter as Router } from 'react-router-dom';
 import GA from './utils/GoogleAnalytics';
-import Checkout from './zoid/checkout';
+import Checkout from '@components/zoid/checkout';
 
 ReactDOM.render(
     <AuthenticationProvider>

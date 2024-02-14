@@ -94,8 +94,6 @@ const LandingPage = () => {
                 </Overlay>                
             }            
             <LandingWrapper>
-
-
                 <BlackBox />
                 <ButtonWrapper>
                     <PrimaryButton onClick={() => forwardToSendBip70()}>
@@ -103,7 +101,6 @@ const LandingPage = () => {
                     </PrimaryButton>
                     <UseExisting onClick={() => useExistingTokens()}>Use existing Tokens in Payment</UseExisting>
                 </ButtonWrapper>
-
             </LandingWrapper>
             <Footer />
         </>

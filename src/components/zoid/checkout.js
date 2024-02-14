@@ -1,4 +1,4 @@
-import * as zoid from 'zoid/dist/zoid.frameworks';
+import * as zoid from 'zoid/dist/zoid.frameworks.min.js';
 
 let Checkout = zoid.create({
     tag: 'zoid-checkout',
