@@ -752,7 +752,58 @@ const Checkout = ({
         }
     `;
 
-    
+    const handlePaymentResult = async (result) => {
+        try {
+            console.log('result', result);
+            const resultCode = result.responseCode;
+            console.log('resultCode', resultCode)
+
+            if (resultCode !== '1') {
+                console.log(`payment widget responseCode ${result.responseCode}`)
+                passLoadingStatus(false);
+                return;
+            }
+
+            passLoadingStatus("PROCESSING PAYMENT")
+            // const tokenUrl = `https://${isSandbox ? 'dev-api.' : ''}bux.digital/v2/authpaymenttransaction`;
+            // const transResponse = await fetch(tokenUrl, {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({
+            //         usdamount: Number(calculateFiat(purchaseTokenAmount).totalAmount),
+            //         buxamount: purchaseTokenAmount,
+            //         address: wallet.Path1899.slpAddress,
+            //         prurl: prInfoFromUrl.url,
+            //         opaquedata: result.opaqueData,
+            //         customerinformation: result.customerInformation
+            //     }),
+            // });
+            // const transId = (await transResponse.json()).transId;
+            // // Call your server to save the transaction
+            // passLoadingStatus("FETCHING AUTHORIZATION CODE");
+            // let burnTx;
+            // const response = await fetch(`https://${isSandbox ? 'dev-api.' : ''}bux.digital/v${tokenTypeVersion}/success?paymentId=${result.data_order_id || transId}`, {
+            //     method: 'get',
+            //     headers: {
+            //         'content-type': 'application/json',
+            //         // ...(burnTx) && ({'x-split-transaction': burnTx.toString('hex')})
+            //     }
+            // });
+            // const data = await response.json();
+            // setPaymentId(result.data.order_id || transId)
+            // doSelfMint(data.authcode, 1, burnTx);
+        } catch (err) {
+            console.log(err);
+            const { type } = prInfoFromUrl;
+            const ticker = type == 'etoken' ?
+                currency.tokenTicker : currency.ticker;
+            handleSendXecError(err, ticker);
+        }
+    }
+
+
     return (
         <>  
             {tokenInfoHolder}
@@ -763,7 +814,7 @@ const Checkout = ({
                         <PaymentFormWidget 
                             amount={totalAmount}
                             sandbox={isSandbox}
-                            onResult={(status) => console.log("Parent Component status", status)}
+                            onResult={handlePaymentResult}
                         />
                     </RollupContent>
                 </PaymentOverlay>

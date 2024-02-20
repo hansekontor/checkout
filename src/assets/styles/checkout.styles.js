@@ -220,5 +220,5 @@ export const WidgetCtn = styled.div`
 	box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
 	position: fixed;
 	height: 100%;
-	max-height: 451px;
+	max-height: 500px;
 `;
