@@ -7,6 +7,7 @@ import { theme } from '../assets/styles/theme';
 const Wallet = lazy(() => import('./Wallet/Wallet'));
 const NotFound = lazy(() => import('./NotFound'));
 import { LoaderCtn, Loader, LoadingAnimation, LoadingText } from '@components/Common/CustomLoader';
+import SuccessAnimation from '@components/Common/SuccessAnimation';
 import './App.css';
 import {
     Route,
@@ -78,7 +79,9 @@ export const WalletCtn = styled.div`
         box-shadow: none;
     }
 `;
-
+const SuccessCtn = styled(LoaderCtn)`
+    background: #f6f6f6;
+`;
 
 
 const App = () => {
@@ -104,12 +107,21 @@ const App = () => {
                             <Suspense fallback={codeSplitLoader}>
                                 {loading && 
                                     <>  
-                                        <LoaderCtn>
-                                            <Loader>
-                                                <LoadingAnimation />
-                                                <LoadingText>{typeof loadingStatus==='string' ? loadingStatus : ""}</LoadingText>
-                                            </Loader>
-                                        </LoaderCtn>
+                                        {loadingStatus === "TRANSACTION COMPLETE" ? (
+                                            <SuccessCtn>
+                                                <Loader>
+                                                    <SuccessAnimation />
+                                                    <LoadingText>TRANSACTION COMPLETE</LoadingText>
+                                                </Loader>
+                                            </SuccessCtn>
+                                        ) : (
+                                            <LoaderCtn>
+                                                <Loader>
+                                                    <LoadingAnimation />
+                                                    <LoadingText>{typeof loadingStatus==='string' ? loadingStatus : ""}</LoadingText>
+                                                </Loader>
+                                            </LoaderCtn>
+                                        )}
                                     </> 
                                 } 
                                 <Switch>

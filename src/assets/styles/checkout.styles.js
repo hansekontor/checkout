@@ -79,7 +79,7 @@ export const OfferHeader = styled.div`
 	display: flex;
 	justify-content: space-between;
 	position: relative;
-	width: 85%;
+	width: 100%;
 `;
 export const OfferName = styled.div`
 	color: #000000;

@@ -870,7 +870,7 @@ const Checkout = ({
                                             <Merchant>
                                                 <MerchantIcon src={MerchantSvg} />
                                                 <MerchantTag>Merchant</MerchantTag>
-                                                <MerchantName>Zoid</MerchantName>
+                                                <MerchantName>{merchant_name}</MerchantName>
                                             </Merchant>                            
                                         </OfferHeader>
                                         {(offer_description || prInfoFromUrl.paymentDetails) && 

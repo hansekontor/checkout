@@ -55,7 +55,7 @@ const StageNumber = styled.div`
 const StageChecked = styled.img`
     position: relative; 
     padding-top: 4px;
-    padding-left: 2px;
+    padding-left: 1px;
 `;
 const StageText = styled.div`
     font-size: 12px;
@@ -66,6 +66,7 @@ const StageText = styled.div`
     text-align: center;
     width: fit-content;
     color: #858585;
+    top: 5px;
 `;
 const StageLine = styled.div`
     height: 1px;
@@ -88,7 +89,7 @@ const ProgressDots = ({progress}) => {
                                 <StageChecked src={CheckSvg} />
                             </StageNumberCtn>
                         </StageButton>
-                        <StageText>Agree</StageText>
+                        {/* <StageText>Agree</StageText> */}
                     </Stage>       
 
                     <StageLineActive />
@@ -101,7 +102,7 @@ const ProgressDots = ({progress}) => {
                                         <StageChecked src={CheckSvg} />
                                     </StageNumberCtn>
                                 </StageButton>
-                                <StageText>Pay</StageText>              
+                                {/* <StageText>Pay</StageText>               */}
                             </Stage>  
                             
                             <StageLineActive />
@@ -112,7 +113,7 @@ const ProgressDots = ({progress}) => {
                                         <StageChecked src={CheckSvg}/>
                                     </StageNumberCtn>
                                 </StageButton>
-                                <StageText>Receipt</StageText>            
+                                {/* <StageText>Receipt</StageText>             */}
                             </Stage>    
                         </>                              
                     ) : (

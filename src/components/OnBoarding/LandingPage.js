@@ -31,17 +31,21 @@ const LandingWrapper = styled.div`
 `;
 
 const ButtonWrapper = styled.div`
-    row-gap: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     position: relative;
     width: 85%;
-    align-content: start;
+    align-items: center;
     margin-top: 40px;
     left: 0;
+    gap: 20px;
 `;
 
 const UseExisting = styled.a`
+    width: 100%;
     left: 0;
-    position: absolute;  
+    text-align: left;
 `;
 
 const LandingPage = () => {
