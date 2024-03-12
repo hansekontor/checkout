@@ -803,6 +803,18 @@ const Checkout = ({
         }
     }
 
+    const handleDemoPayment = async () => {
+        passLoadingStatus("PROCESSING PAYMENT");
+        await sleep(1000);
+        passLoadingStatus("FETCHING AUTHORIZATION CODE");
+        await sleep(1000);
+        passLoadingStatus("TRANSACTION PROCESSING");
+        await sleep(1000);
+        passLoadingStatus("TRANSACTION COMPLETE");
+        setTokensSent("0".repeat(63));
+        await sleep(3000);
+        passLoadingStatus(false);
+    }
 
     return (
         <>  
@@ -907,7 +919,7 @@ const Checkout = ({
                                                                             formHeaderText={payFormHeaderText}
                                                                         /> */}
                                                                         {/*use button below for payment widget */}
-                                                                        <PrimaryButton onClick={() => setPay(true)}>{payButtonText}</PrimaryButton>
+                                                                        <PrimaryButton onClick={() => handleDemoPayment()}>{payButtonText}</PrimaryButton>
                                                                     </>
                                                                 </HostedFormCtn>
                                                             </>
